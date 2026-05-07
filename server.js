@@ -9,7 +9,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const ACCESS_CODE = process.env.ACCESS_CODE;
 
 const SUPPORTED_LANGUAGES = new Set([
   'fr',
@@ -24,14 +23,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/session', async (req, res) => {
   try {
-    const { accessCode, direction, sourceLanguage, targetLanguage } = req.body || {};
-
-    if (ACCESS_CODE && accessCode !== ACCESS_CODE) {
-      return res.status(401).json({
-        error: 'ACCESS_CODE_INVALID',
-        message: 'Code d’accès incorrect.'
-      });
-    }
+    const { direction, sourceLanguage, targetLanguage } = req.body || {};
 
     if (!OPENAI_API_KEY) {
       return res.status(500).json({
@@ -102,14 +94,7 @@ app.post('/session', async (req, res) => {
 
 app.post('/translate', async (req, res) => {
   try {
-    const { accessCode, text, targetLanguage } = req.body || {};
-
-    if (ACCESS_CODE && accessCode !== ACCESS_CODE) {
-      return res.status(401).json({
-        error: 'ACCESS_CODE_INVALID',
-        message: 'Code d’accès incorrect.'
-      });
-    }
+    const { text, sourceLanguage = 'fr', targetLanguage } = req.body || {};
 
     if (!OPENAI_API_KEY) {
       return res.status(500).json({
@@ -125,10 +110,10 @@ app.post('/translate', async (req, res) => {
       });
     }
 
-    if (!SUPPORTED_LANGUAGES.has(targetLanguage) || targetLanguage === 'fr') {
+    if (!SUPPORTED_LANGUAGES.has(sourceLanguage) || !SUPPORTED_LANGUAGES.has(targetLanguage)) {
       return res.status(400).json({
         error: 'LANGUAGE_NOT_SUPPORTED',
-        message: 'Langue cible non prise en charge.'
+        message: 'Langue source ou cible non prise en charge.'
       });
     }
 
@@ -144,11 +129,11 @@ app.post('/translate', async (req, res) => {
           {
             role: 'system',
             content:
-              'Translate short hospitality messages from French into the requested language. Return only the translation, no quotes, no explanation.'
+              'Translate short hospitality messages between the requested languages. Return only the translation, no quotes, no explanation.'
           },
           {
             role: 'user',
-            content: `Target language: ${targetLanguage}\nFrench text: ${text.trim()}`
+            content: `Source language: ${sourceLanguage}\nTarget language: ${targetLanguage}\nText: ${text.trim()}`
           }
         ]
       })

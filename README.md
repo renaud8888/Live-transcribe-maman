@@ -2,7 +2,7 @@
 
 Petite web app mobile/PWA pour aider à parler avec des guests qui ne parlent pas français.
 
-Elle est volontairement simple : un code d’accès, une langue principale, deux gros boutons de traduction, des sous-titres, et des phrases rapides du gîte.
+Elle est volontairement simple : une langue principale, un mode live, un mode éco par dictée clavier, des sous-titres, et des phrases rapides du gîte.
 
 > Traduction automatique, à vérifier pour les informations importantes.
 
@@ -21,12 +21,10 @@ Ouvrez ensuite `.env` et remplacez les valeurs.
 
 ```bash
 OPENAI_API_KEY=sk-proj-votre-cle-api-openai
-ACCESS_CODE=1234
 PORT=3000
 ```
 
 - `OPENAI_API_KEY` : clé API OpenAI, uniquement côté serveur.
-- `ACCESS_CODE` : code simple demandé dans l’app avant de créer une session. Si la variable est vide ou absente, aucun code n’est vérifié.
 - `PORT` : port local ou port fourni par Render.
 
 Ne mettez jamais votre vraie clé API dans le code, dans GitHub, ou dans `public/app.js`.
@@ -83,7 +81,6 @@ Le fichier `.env` est ignoré par Git grâce à `.gitignore`.
 5. Start command : `npm start`
 6. Ajoutez les variables d’environnement :
    - `OPENAI_API_KEY`
-   - `ACCESS_CODE`
    - `PORT` est généralement fourni par Render automatiquement.
 
 Voir aussi [docs/deployment-render.md](docs/deployment-render.md).

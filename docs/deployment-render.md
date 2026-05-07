@@ -28,7 +28,6 @@ Ajoutez dans Render :
 
 ```bash
 OPENAI_API_KEY=sk-proj-...
-ACCESS_CODE=votre-code
 ```
 
 Render fournit généralement `PORT` automatiquement. L’application lit quand même `PORT` si Render le définit.
@@ -36,9 +35,8 @@ Render fournit généralement `PORT` automatiquement. L’application lit quand 
 ## Tester après déploiement
 
 1. Ouvrez l’URL HTTPS Render.
-2. Entrez le code d’accès.
-3. Choisissez une langue.
-4. Lancez une traduction.
-5. Autorisez le micro.
+2. Choisissez une langue.
+3. Lancez une traduction.
+4. Autorisez le micro si vous utilisez le mode Live.
 
 Si le micro ne démarre pas, vérifiez les permissions du navigateur et que l’URL est bien en HTTPS.

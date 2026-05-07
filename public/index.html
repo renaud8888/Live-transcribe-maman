@@ -37,21 +37,16 @@
             </select>
           </label>
 
-          <details id="accessMenu" class="access-menu">
-            <summary>Accès</summary>
-            <label for="accessCode">Code d’accès</label>
-            <input id="accessCode" name="accessCode" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="1234">
-          </details>
         </div>
 
         <div class="mode-switch" aria-label="Mode de traduction">
-          <button id="modeRealtimeButton" class="mode-button is-selected" type="button" data-mode="realtime">
-            Live
-            <small>Traduction en direct</small>
+          <button id="modeRealtimeButton" class="mode-button is-selected" type="button" data-mode="realtime" aria-pressed="true">
+            <span>Live</span>
+            <small>Micro continu</small>
           </button>
-          <button id="modeDictationButton" class="mode-button" type="button" data-mode="dictation">
-            Éco
-            <small>Dictée iPhone + traduction texte</small>
+          <button id="modeDictationButton" class="mode-button" type="button" data-mode="dictation" aria-pressed="false">
+            <span>Éco</span>
+            <small>Dictée clavier</small>
           </button>
         </div>
 
@@ -93,10 +88,19 @@
             <span>La traduction s’affichera ici.</span>
           </div>
 
+          <div id="dictationPanel" class="dictation-panel" hidden>
+            <label id="dictationLabel" for="dictationText">Texte à traduire</label>
+            <textarea id="dictationText" rows="4" autocomplete="off" placeholder="Touchez ici, puis utilisez le micro du clavier iPhone."></textarea>
+            <button id="translateDictationButton" class="quiet-button strong" type="button">Traduire</button>
+          </div>
+
           <div class="live-actions">
             <button id="clearSubtitleButton" class="quiet-button" type="button">Effacer</button>
             <button id="readLiveButton" class="quiet-button" type="button">Lire</button>
-            <button id="autoReadButton" class="quiet-button" type="button" aria-pressed="false">Lecture auto</button>
+            <button id="autoReadButton" class="switch-button" type="button" role="switch" aria-checked="false">
+              <span class="switch-track" aria-hidden="true"></span>
+              <span>Lecture auto</span>
+            </button>
             <button id="showLiveLargeButton" class="quiet-button strong" type="button">Afficher à l’invité</button>
           </div>
         </section>

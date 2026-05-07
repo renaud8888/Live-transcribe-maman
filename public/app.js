@@ -69,16 +69,14 @@ const state = {
   currentQuickPhrase: null,
   uiState: 'ready',
   mode: 'realtime',
-  recognition: null,
   lastDisplayText: '',
+  dictationDirection: null,
   autoStopTimer: null,
   autoReadEnabled: false,
   autoReadTimer: null,
   lastSpokenText: ''
 };
 
-const accessCodeInput = document.querySelector('#accessCode');
-const accessMenu = document.querySelector('#accessMenu');
 const guestLanguageSelect = document.querySelector('#guestLanguage');
 const hostToGuestButton = document.querySelector('#hostToGuestButton');
 const guestToHostButton = document.querySelector('#guestToHostButton');
@@ -102,6 +100,10 @@ const showLiveLargeButton = document.querySelector('#showLiveLargeButton');
 const readLiveButton = document.querySelector('#readLiveButton');
 const autoReadButton = document.querySelector('#autoReadButton');
 const clearSubtitleButton = document.querySelector('#clearSubtitleButton');
+const dictationPanel = document.querySelector('#dictationPanel');
+const dictationLabel = document.querySelector('#dictationLabel');
+const dictationText = document.querySelector('#dictationText');
+const translateDictationButton = document.querySelector('#translateDictationButton');
 const hostDirectionLabel = document.querySelector('#hostDirectionLabel');
 const guestDirectionLabel = document.querySelector('#guestDirectionLabel');
 const liveTitle = document.querySelector('#liveTitle');
@@ -121,25 +123,6 @@ stopButton.addEventListener('click', () => stopTranslation('Arrêté'));
 modeRealtimeButton.addEventListener('click', () => setMode('realtime'));
 modeDictationButton.addEventListener('click', () => setMode('dictation'));
 guestLanguageSelect.addEventListener('change', handleLanguageChange);
-accessCodeInput.addEventListener('change', () => {
-  localStorage.setItem('gite.accessCode', accessCodeInput.value.trim());
-  accessMenu.open = false;
-  showToast('Code mémorisé');
-});
-accessCodeInput.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    localStorage.setItem('gite.accessCode', accessCodeInput.value.trim());
-    accessMenu.open = false;
-    accessCodeInput.blur();
-    showToast('Code mémorisé');
-  }
-});
-document.addEventListener('click', (event) => {
-  if (accessMenu.open && !accessMenu.contains(event.target)) {
-    accessMenu.open = false;
-  }
-});
 quickFrench.addEventListener('input', () => {
   window.clearTimeout(quickFrench.translateTimeout);
   quickFrench.translateTimeout = window.setTimeout(translateEditedQuickPhrase, 650);
@@ -150,11 +133,13 @@ showLiveLargeButton.addEventListener('click', () => showGuestDisplay(state.lastD
 readLiveButton.addEventListener('click', readLiveText);
 autoReadButton.addEventListener('click', toggleAutoRead);
 clearSubtitleButton.addEventListener('click', clearSubtitle);
+translateDictationButton.addEventListener('click', translateDictationInput);
 closePhraseButton.addEventListener('click', closeQuickPhrase);
 closeGuestDisplayButton.addEventListener('click', () => guestDisplayDialog.close());
 speakGuestDisplayButton.addEventListener('click', speakGuestDisplay);
 
 restorePreferences();
+setMode(state.mode, { silent: true });
 renderQuickPhraseButtons();
 updateLanguageLabels();
 updateUIState('ready');
@@ -196,7 +181,6 @@ async function startTranslation(direction) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        accessCode: accessCodeInput.value.trim(),
         direction,
         sourceLanguage,
         targetLanguage
@@ -208,8 +192,6 @@ async function startTranslation(direction) {
     if (!sessionResponse.ok) {
       throw new Error(readableServerError(sessionPayload));
     }
-
-    localStorage.setItem('gite.accessCode', accessCodeInput.value.trim());
 
     const clientSecret = sessionPayload.client_secret;
     if (!clientSecret) {
@@ -275,73 +257,75 @@ async function startTranslation(direction) {
   }
 }
 
-function setMode(mode) {
+function setMode(mode, options = {}) {
+  const modeChanged = state.mode !== mode;
+  if (modeChanged) {
+    stopTranslation(null);
+  }
+
   state.mode = mode;
+  localStorage.setItem('gite.mode', mode);
   modeRealtimeButton.classList.toggle('is-selected', mode === 'realtime');
   modeDictationButton.classList.toggle('is-selected', mode === 'dictation');
+  modeRealtimeButton.setAttribute('aria-pressed', String(mode === 'realtime'));
+  modeDictationButton.setAttribute('aria-pressed', String(mode === 'dictation'));
+  dictationPanel.hidden = mode !== 'dictation';
   autoReadButton.hidden = mode !== 'realtime';
   listeningBadge.textContent = mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
-  showToast(mode === 'dictation' ? 'Mode économique activé' : 'Mode live activé');
+  if (mode === 'realtime') {
+    state.dictationDirection = null;
+    state.activeDirection = null;
+    dictationText.value = '';
+    subtitleText.innerHTML = '<span>La traduction s’affichera ici.</span>';
+    state.lastDisplayText = '';
+  } else {
+    subtitleText.innerHTML = '<span>Choisissez qui parle, puis dictez avec le clavier iPhone.</span>';
+    state.lastDisplayText = '';
+  }
+  updateUIState('ready');
+  if (!options.silent) {
+    showToast(mode === 'dictation' ? 'Mode Éco activé' : 'Mode Live activé');
+  }
 }
 
 function startDictationTranslation(direction) {
   clearError();
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    const message = 'La dictée du navigateur n’est pas disponible ici. Essayez Safari/Chrome récent, ou utilisez le mode Live.';
-    showError(message);
-    showToast(message);
-    return;
-  }
-
   stopTranslation(null);
+  state.dictationDirection = direction;
   state.activeDirection = direction;
   updateUIState(direction === 'host-to-guest' ? 'listeningHost' : 'listeningGuest', { direction });
-  liveTitle.textContent = direction === 'host-to-guest' ? 'Dictez en français' : 'L’invité peut dicter';
-  subtitleText.innerHTML = '<span>Parlez maintenant. Je prépare la traduction...</span>';
+  liveTitle.textContent = 'Dictée';
+  dictationLabel.textContent = direction === 'host-to-guest'
+    ? 'Dictez votre phrase en français'
+    : `Dictez la phrase de l’invité en ${LANGUAGE_NAMES[guestLanguageSelect.value].toLowerCase()}`;
+  subtitleText.innerHTML = '<span>Le résultat apparaîtra ici après traduction.</span>';
   state.lastDisplayText = '';
+  dictationPanel.hidden = false;
+  dictationText.value = '';
+  window.setTimeout(() => dictationText.focus(), 50);
+  showToast('Dictée clavier prête');
+}
 
+async function translateDictationInput() {
+  const text = dictationText.value.trim();
+  const direction = state.dictationDirection || state.activeDirection;
+  if (!direction) {
+    showToast('Choisissez qui parle');
+    return;
+  }
+  if (!text) {
+    showToast('Dictez ou écrivez une phrase');
+    dictationText.focus();
+    return;
+  }
   const guestLanguage = guestLanguageSelect.value;
   const sourceLanguage = direction === 'host-to-guest' ? 'fr' : guestLanguage;
   const targetLanguage = direction === 'host-to-guest' ? guestLanguage : 'fr';
-  const recognition = new SpeechRecognition();
-  state.recognition = recognition;
-  recognition.lang = SPEECH_LANGS[sourceLanguage] || sourceLanguage;
-  recognition.continuous = false;
-  recognition.interimResults = false;
 
-  recognition.onresult = async (event) => {
-    const transcript = Array.from(event.results)
-      .map((result) => result[0]?.transcript || '')
-      .join(' ')
-      .trim();
-
-    if (!transcript) {
-      showToast('Aucun texte reconnu');
-      updateUIState('stopped');
-      return;
-    }
-
-    subtitleText.textContent = 'Traduction en cours...';
-    await translateDictatedText(transcript, sourceLanguage, targetLanguage);
-  };
-
-  recognition.onerror = (event) => {
-    const message = event.error === 'not-allowed'
-      ? 'Micro refusé.'
-      : 'Dictée impossible pour le moment.';
-    showError(message);
-    showToast(message);
-    updateUIState('error');
-  };
-
-  recognition.onend = () => {
-    state.recognition = null;
-  };
-
-  recognition.start();
-  showToast('Dictée en cours');
+  subtitleText.textContent = 'Traduction en cours...';
+  translateDictationButton.disabled = true;
+  await translateDictatedText(text, sourceLanguage, targetLanguage);
+  translateDictationButton.disabled = false;
 }
 
 async function translateDictatedText(text, sourceLanguage, targetLanguage) {
@@ -352,7 +336,6 @@ async function translateDictatedText(text, sourceLanguage, targetLanguage) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        accessCode: accessCodeInput.value.trim(),
         text,
         sourceLanguage,
         targetLanguage
@@ -380,11 +363,6 @@ async function translateDictatedText(text, sourceLanguage, targetLanguage) {
 
 async function stopTranslation(label = 'Arrêté') {
   clearAutoStop();
-
-  if (state.recognition) {
-    state.recognition.stop();
-    state.recognition = null;
-  }
 
   if (state.dataChannel) state.dataChannel.close();
 
@@ -428,7 +406,7 @@ function clearAutoStop() {
 function toggleAutoRead() {
   state.autoReadEnabled = !state.autoReadEnabled;
   autoReadButton.classList.toggle('is-on', state.autoReadEnabled);
-  autoReadButton.setAttribute('aria-pressed', String(state.autoReadEnabled));
+  autoReadButton.setAttribute('aria-checked', String(state.autoReadEnabled));
   showToast(state.autoReadEnabled ? 'Lecture automatique activée' : 'Lecture automatique désactivée');
 }
 
@@ -486,15 +464,15 @@ function updateUIState(nextState, options = {}) {
   const statusLabels = {
     ready: 'Prêt',
     connecting: 'Connexion',
-    listeningHost: 'Écoute',
-    listeningGuest: 'Écoute',
+    listeningHost: state.mode === 'dictation' ? 'Dictée' : 'Écoute',
+    listeningGuest: state.mode === 'dictation' ? 'Dictée' : 'Écoute',
     stopped: 'Arrêté',
     error: 'Erreur'
   };
 
   statusBadge.className = `status status-${nextState}`;
   statusText.textContent = statusLabels[nextState] || 'Prêt';
-  stopButton.hidden = !['connecting', 'listeningHost', 'listeningGuest'].includes(nextState);
+  stopButton.hidden = state.mode === 'dictation' || !['connecting', 'listeningHost', 'listeningGuest'].includes(nextState);
 
   hostToGuestButton.classList.toggle('is-active', nextState === 'listeningHost');
   guestToHostButton.classList.toggle('is-active', nextState === 'listeningGuest');
@@ -506,7 +484,7 @@ function updateUIState(nextState, options = {}) {
   if (nextState === 'ready') {
     liveTitle.textContent = 'Traduction';
     subtitleDirection.textContent = 'En attente';
-    listeningBadge.textContent = 'Micro prêt';
+    listeningBadge.textContent = state.mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
   }
 
   if (nextState === 'connecting') {
@@ -518,13 +496,13 @@ function updateUIState(nextState, options = {}) {
   if (nextState === 'listeningHost' || nextState === 'listeningGuest') {
     liveTitle.textContent = isHost ? 'Vous parlez' : 'L’invité parle';
     subtitleDirection.textContent = isHost ? `FR → ${guestLanguage.toUpperCase()}` : `${guestLanguage.toUpperCase()} → FR`;
-    listeningBadge.textContent = 'Micro en écoute';
+    listeningBadge.textContent = state.mode === 'dictation' ? 'Dictée prête' : 'Micro en écoute';
   }
 
   if (nextState === 'stopped') {
     liveTitle.textContent = 'Session arrêtée';
     subtitleDirection.textContent = 'Arrêté';
-    listeningBadge.textContent = 'Micro prêt';
+    listeningBadge.textContent = state.mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
   }
 
   if (nextState === 'error') {
@@ -613,7 +591,6 @@ async function translateEditedQuickPhrase() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        accessCode: accessCodeInput.value.trim(),
         text,
         targetLanguage: language
       })
@@ -682,7 +659,9 @@ function speakText(text, language) {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = SPEECH_LANGS[language] || language;
   utterance.rate = 0.92;
+  utterance.onerror = () => showToast('Lecture audio indisponible');
   window.speechSynthesis.cancel();
+  window.speechSynthesis.resume();
   window.speechSynthesis.speak(utterance);
 }
 
@@ -695,14 +674,14 @@ function handleLanguageChange() {
 
 function restorePreferences() {
   const storedLanguage = localStorage.getItem('gite.guestLanguage');
-  const storedCode = localStorage.getItem('gite.accessCode');
+  const storedMode = localStorage.getItem('gite.mode');
 
   if (storedLanguage && LANGUAGE_NAMES[storedLanguage]) {
     guestLanguageSelect.value = storedLanguage;
   }
 
-  if (storedCode) {
-    accessCodeInput.value = storedCode;
+  if (['realtime', 'dictation'].includes(storedMode)) {
+    state.mode = storedMode;
   }
 }
 
@@ -723,7 +702,10 @@ function clearError() {
 }
 
 function showError(message) {
-  errorMessage.textContent = `${message} Vérifiez le code, autorisez le micro, puis réessayez.`;
+  const help = state.mode === 'realtime'
+    ? 'Autorisez le micro, puis réessayez.'
+    : 'Vérifiez la phrase, puis réessayez.';
+  errorMessage.textContent = `${message} ${help}`;
   errorMessage.hidden = false;
 }
 
@@ -739,10 +721,6 @@ function showToast(message) {
 }
 
 function readableServerError(payload) {
-  if (payload?.error === 'ACCESS_CODE_INVALID') {
-    return 'Code d’accès incorrect.';
-  }
-
   if (payload?.message) {
     return payload.message;
   }
@@ -759,10 +737,6 @@ function readableClientError(error) {
 
   if (message.includes('Requested device not found') || message.includes('NotFoundError')) {
     return 'Aucun micro trouvé sur cet appareil.';
-  }
-
-  if (message.includes('Code d’accès incorrect')) {
-    return 'Code d’accès incorrect.';
   }
 
   if (message.includes('OpenAI')) {
