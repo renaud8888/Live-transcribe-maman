@@ -44,24 +44,37 @@
           </details>
         </div>
 
-        <section class="direction-panel" aria-label="Choisir qui parle">
-          <button id="hostToGuestButton" class="direction-card direction-host" type="button" data-direction="host-to-guest">
-            <span class="speaker-mark" aria-hidden="true">FR</span>
-            <span class="direction-copy">
-              <strong>Je parle</strong>
-              <small id="hostDirectionLabel">Français → Anglais</small>
-            </span>
-            <span class="start-chip">Démarrer</span>
+        <div class="mode-switch" aria-label="Mode de traduction">
+          <button id="modeRealtimeButton" class="mode-button is-selected" type="button" data-mode="realtime">
+            Live
+            <small>Traduction en direct</small>
           </button>
+          <button id="modeDictationButton" class="mode-button" type="button" data-mode="dictation">
+            Éco
+            <small>Dictée iPhone + traduction texte</small>
+          </button>
+        </div>
 
-          <button id="guestToHostButton" class="direction-card direction-guest" type="button" data-direction="guest-to-host">
-            <span class="speaker-mark" aria-hidden="true">🌍</span>
-            <span class="direction-copy">
-              <strong>L’invité parle</strong>
-              <small id="guestDirectionLabel">Anglais → Français</small>
-            </span>
-            <span class="start-chip">Démarrer</span>
-          </button>
+        <section class="direction-row" aria-label="Choisir qui parle">
+          <button id="stopButton" class="stop-button" type="button" hidden>Arrêter</button>
+
+          <div class="direction-panel">
+            <button id="hostToGuestButton" class="direction-card direction-host" type="button" data-direction="host-to-guest">
+              <span class="speaker-mark" aria-hidden="true">FR</span>
+              <span class="direction-copy">
+                <strong>Je parle</strong>
+                <small id="hostDirectionLabel">Français → Anglais</small>
+              </span>
+            </button>
+
+            <button id="guestToHostButton" class="direction-card direction-guest" type="button" data-direction="guest-to-host">
+              <span class="speaker-mark" aria-hidden="true">🌍</span>
+              <span class="direction-copy">
+                <strong>L’invité parle</strong>
+                <small id="guestDirectionLabel">Anglais → Français</small>
+              </span>
+            </button>
+          </div>
         </section>
 
         <section class="live-stage" aria-label="Traduction">
@@ -82,8 +95,9 @@
 
           <div class="live-actions">
             <button id="clearSubtitleButton" class="quiet-button" type="button">Effacer</button>
+            <button id="readLiveButton" class="quiet-button" type="button">Lire</button>
+            <button id="autoReadButton" class="quiet-button" type="button" aria-pressed="false">Lecture auto</button>
             <button id="showLiveLargeButton" class="quiet-button strong" type="button">Afficher à l’invité</button>
-            <button id="stopButton" class="stop-button" type="button" hidden>Arrêter</button>
           </div>
         </section>
       </section>

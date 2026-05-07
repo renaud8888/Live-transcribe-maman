@@ -68,8 +68,13 @@ const state = {
   activeDirection: null,
   currentQuickPhrase: null,
   uiState: 'ready',
+  mode: 'realtime',
+  recognition: null,
   lastDisplayText: '',
-  autoStopTimer: null
+  autoStopTimer: null,
+  autoReadEnabled: false,
+  autoReadTimer: null,
+  lastSpokenText: ''
 };
 
 const accessCodeInput = document.querySelector('#accessCode');
@@ -78,6 +83,8 @@ const guestLanguageSelect = document.querySelector('#guestLanguage');
 const hostToGuestButton = document.querySelector('#hostToGuestButton');
 const guestToHostButton = document.querySelector('#guestToHostButton');
 const stopButton = document.querySelector('#stopButton');
+const modeRealtimeButton = document.querySelector('#modeRealtimeButton');
+const modeDictationButton = document.querySelector('#modeDictationButton');
 const statusBadge = document.querySelector('#statusBadge');
 const statusText = document.querySelector('#statusText');
 const subtitleText = document.querySelector('#subtitleText');
@@ -92,6 +99,8 @@ const quickTranslated = document.querySelector('#quickTranslated');
 const speakQuickButton = document.querySelector('#speakQuickButton');
 const showLargeButton = document.querySelector('#showLargeButton');
 const showLiveLargeButton = document.querySelector('#showLiveLargeButton');
+const readLiveButton = document.querySelector('#readLiveButton');
+const autoReadButton = document.querySelector('#autoReadButton');
 const clearSubtitleButton = document.querySelector('#clearSubtitleButton');
 const hostDirectionLabel = document.querySelector('#hostDirectionLabel');
 const guestDirectionLabel = document.querySelector('#guestDirectionLabel');
@@ -106,9 +115,11 @@ const closeGuestDisplayButton = document.querySelector('#closeGuestDisplayButton
 const speakGuestDisplayButton = document.querySelector('#speakGuestDisplayButton');
 const remoteAudio = document.querySelector('#remoteAudio');
 
-hostToGuestButton.addEventListener('click', () => startTranslation('host-to-guest'));
-guestToHostButton.addEventListener('click', () => startTranslation('guest-to-host'));
+hostToGuestButton.addEventListener('click', () => startSelectedMode('host-to-guest'));
+guestToHostButton.addEventListener('click', () => startSelectedMode('guest-to-host'));
 stopButton.addEventListener('click', () => stopTranslation('Arrêté'));
+modeRealtimeButton.addEventListener('click', () => setMode('realtime'));
+modeDictationButton.addEventListener('click', () => setMode('dictation'));
 guestLanguageSelect.addEventListener('change', handleLanguageChange);
 accessCodeInput.addEventListener('change', () => {
   localStorage.setItem('gite.accessCode', accessCodeInput.value.trim());
@@ -136,6 +147,8 @@ quickFrench.addEventListener('input', () => {
 speakQuickButton.addEventListener('click', speakSelectedQuickPhrase);
 showLargeButton.addEventListener('click', () => showGuestDisplay(quickTranslated.textContent, guestLanguageSelect.value));
 showLiveLargeButton.addEventListener('click', () => showGuestDisplay(state.lastDisplayText, currentOutputLanguage()));
+readLiveButton.addEventListener('click', readLiveText);
+autoReadButton.addEventListener('click', toggleAutoRead);
 clearSubtitleButton.addEventListener('click', clearSubtitle);
 closePhraseButton.addEventListener('click', closeQuickPhrase);
 closeGuestDisplayButton.addEventListener('click', () => guestDisplayDialog.close());
@@ -146,6 +159,15 @@ renderQuickPhraseButtons();
 updateLanguageLabels();
 updateUIState('ready');
 registerServiceWorker();
+
+function startSelectedMode(direction) {
+  if (state.mode === 'dictation') {
+    startDictationTranslation(direction);
+    return;
+  }
+
+  startTranslation(direction);
+}
 
 async function startTranslation(direction) {
   clearError();
@@ -253,8 +275,116 @@ async function startTranslation(direction) {
   }
 }
 
+function setMode(mode) {
+  state.mode = mode;
+  modeRealtimeButton.classList.toggle('is-selected', mode === 'realtime');
+  modeDictationButton.classList.toggle('is-selected', mode === 'dictation');
+  autoReadButton.hidden = mode !== 'realtime';
+  listeningBadge.textContent = mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
+  showToast(mode === 'dictation' ? 'Mode économique activé' : 'Mode live activé');
+}
+
+function startDictationTranslation(direction) {
+  clearError();
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    const message = 'La dictée du navigateur n’est pas disponible ici. Essayez Safari/Chrome récent, ou utilisez le mode Live.';
+    showError(message);
+    showToast(message);
+    return;
+  }
+
+  stopTranslation(null);
+  state.activeDirection = direction;
+  updateUIState(direction === 'host-to-guest' ? 'listeningHost' : 'listeningGuest', { direction });
+  liveTitle.textContent = direction === 'host-to-guest' ? 'Dictez en français' : 'L’invité peut dicter';
+  subtitleText.innerHTML = '<span>Parlez maintenant. Je prépare la traduction...</span>';
+  state.lastDisplayText = '';
+
+  const guestLanguage = guestLanguageSelect.value;
+  const sourceLanguage = direction === 'host-to-guest' ? 'fr' : guestLanguage;
+  const targetLanguage = direction === 'host-to-guest' ? guestLanguage : 'fr';
+  const recognition = new SpeechRecognition();
+  state.recognition = recognition;
+  recognition.lang = SPEECH_LANGS[sourceLanguage] || sourceLanguage;
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = async (event) => {
+    const transcript = Array.from(event.results)
+      .map((result) => result[0]?.transcript || '')
+      .join(' ')
+      .trim();
+
+    if (!transcript) {
+      showToast('Aucun texte reconnu');
+      updateUIState('stopped');
+      return;
+    }
+
+    subtitleText.textContent = 'Traduction en cours...';
+    await translateDictatedText(transcript, sourceLanguage, targetLanguage);
+  };
+
+  recognition.onerror = (event) => {
+    const message = event.error === 'not-allowed'
+      ? 'Micro refusé.'
+      : 'Dictée impossible pour le moment.';
+    showError(message);
+    showToast(message);
+    updateUIState('error');
+  };
+
+  recognition.onend = () => {
+    state.recognition = null;
+  };
+
+  recognition.start();
+  showToast('Dictée en cours');
+}
+
+async function translateDictatedText(text, sourceLanguage, targetLanguage) {
+  try {
+    const response = await fetch('/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        accessCode: accessCodeInput.value.trim(),
+        text,
+        sourceLanguage,
+        targetLanguage
+      })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(readableServerError(payload));
+    }
+
+    updateUIState('stopped');
+    state.lastDisplayText = payload.translation || '';
+    subtitleText.textContent = state.lastDisplayText || 'Traduction indisponible.';
+    liveTitle.textContent = 'Traduction';
+    subtitleDirection.textContent = `${sourceLanguage.toUpperCase()} → ${targetLanguage.toUpperCase()}`;
+    showToast('Traduction prête');
+  } catch (error) {
+    showError(readableClientError(error));
+    showToast(readableClientError(error));
+    updateUIState('error');
+  }
+}
+
 async function stopTranslation(label = 'Arrêté') {
   clearAutoStop();
+
+  if (state.recognition) {
+    state.recognition.stop();
+    state.recognition = null;
+  }
 
   if (state.dataChannel) state.dataChannel.close();
 
@@ -295,6 +425,25 @@ function clearAutoStop() {
   state.autoStopTimer = null;
 }
 
+function toggleAutoRead() {
+  state.autoReadEnabled = !state.autoReadEnabled;
+  autoReadButton.classList.toggle('is-on', state.autoReadEnabled);
+  autoReadButton.setAttribute('aria-pressed', String(state.autoReadEnabled));
+  showToast(state.autoReadEnabled ? 'Lecture automatique activée' : 'Lecture automatique désactivée');
+}
+
+function scheduleAutoRead() {
+  if (!state.autoReadEnabled || !state.lastDisplayText.trim()) return;
+
+  window.clearTimeout(state.autoReadTimer);
+  state.autoReadTimer = window.setTimeout(() => {
+    const text = state.lastDisplayText.trim();
+    if (!text || text === state.lastSpokenText) return;
+    state.lastSpokenText = text;
+    speakText(text, currentOutputLanguage());
+  }, 1400);
+}
+
 function handleRealtimeEvent(event) {
   let payload;
 
@@ -319,6 +468,7 @@ function handleRealtimeEvent(event) {
       : text;
     state.lastDisplayText = subtitleText.textContent;
     liveTitle.textContent = 'Traduction';
+    scheduleAutoRead();
   }
 
   if (payload.type?.includes('error')) {
@@ -423,6 +573,17 @@ function renderSelectedQuickPhrase() {
 
 function speakSelectedQuickPhrase() {
   speakText(quickTranslated.textContent, guestLanguageSelect.value);
+  showToast('Lecture lancée');
+}
+
+function readLiveText() {
+  const text = state.lastDisplayText.trim();
+  if (!text) {
+    showToast('Aucune traduction à lire');
+    return;
+  }
+
+  speakText(text, currentOutputLanguage());
   showToast('Lecture lancée');
 }
 
