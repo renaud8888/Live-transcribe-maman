@@ -354,7 +354,7 @@ function updateUIState(nextState, options = {}) {
   guestToHostButton.classList.toggle('is-muted', ['connecting', 'listeningHost'].includes(nextState));
 
   if (nextState === 'ready') {
-    liveTitle.textContent = 'Choisissez qui parle';
+    liveTitle.textContent = 'Traduction';
     subtitleDirection.textContent = 'En attente';
     listeningBadge.textContent = 'Micro prêt';
   }
