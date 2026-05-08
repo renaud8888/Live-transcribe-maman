@@ -209,7 +209,7 @@ const hostText = document.querySelector('#hostText');
 const guestText = document.querySelector('#guestText');
 const hostSpeakButton = document.querySelector('#hostSpeakButton');
 const guestSpeakButton = document.querySelector('#guestSpeakButton');
-const stopLiveButton = document.querySelector('#stopLiveButton');
+const stopLiveButtons = document.querySelectorAll('.stop-live-button');
 const readHostButton = document.querySelector('#readHostButton');
 const readGuestButton = document.querySelector('#readGuestButton');
 const clearHostButton = document.querySelector('#clearHostButton');
@@ -238,7 +238,9 @@ openMessagesView.addEventListener('click', () => showView('messages'));
 guestLanguageSelect.addEventListener('change', handleLanguageChange);
 hostSpeakButton.addEventListener('click', () => startTranslation('host-to-guest'));
 guestSpeakButton.addEventListener('click', () => startTranslation('guest-to-host'));
-stopLiveButton.addEventListener('click', () => stopTranslation('Arrêté'));
+stopLiveButtons.forEach((button) => {
+  button.addEventListener('click', () => stopTranslation('Arrêté'));
+});
 readHostButton.addEventListener('click', () => speakText(hostText.value, 'fr'));
 readGuestButton.addEventListener('click', () => speakText(guestText.value, guestLanguageSelect.value));
 clearHostButton.addEventListener('click', () => clearPanel('host'));
@@ -523,8 +525,10 @@ function updateUIState(nextState, options = {}) {
   guestSpeakButton.classList.toggle('is-active', nextState === 'listeningGuest' || direction === 'guest-to-host');
   hostSpeakButton.disabled = nextState === 'connecting';
   guestSpeakButton.disabled = nextState === 'connecting';
-  stopLiveButton.disabled = !hasLiveWork;
-  stopLiveButton.classList.toggle('is-available', hasLiveWork);
+  stopLiveButtons.forEach((button) => {
+    button.disabled = !hasLiveWork;
+    button.classList.toggle('is-available', hasLiveWork);
+  });
 }
 
 function renderMessages() {
