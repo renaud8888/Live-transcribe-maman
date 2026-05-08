@@ -97,7 +97,6 @@ const quickTranslated = document.querySelector('#quickTranslated');
 const speakQuickButton = document.querySelector('#speakQuickButton');
 const showLargeButton = document.querySelector('#showLargeButton');
 const showLiveLargeButton = document.querySelector('#showLiveLargeButton');
-const readLiveButton = document.querySelector('#readLiveButton');
 const autoReadButton = document.querySelector('#autoReadButton');
 const clearSubtitleButton = document.querySelector('#clearSubtitleButton');
 const dictationPanel = document.querySelector('#dictationPanel');
@@ -130,7 +129,6 @@ quickFrench.addEventListener('input', () => {
 speakQuickButton.addEventListener('click', speakSelectedQuickPhrase);
 showLargeButton.addEventListener('click', () => showGuestDisplay(quickTranslated.textContent, guestLanguageSelect.value));
 showLiveLargeButton.addEventListener('click', () => showGuestDisplay(state.lastDisplayText, currentOutputLanguage()));
-readLiveButton.addEventListener('click', readLiveText);
 autoReadButton.addEventListener('click', toggleAutoRead);
 clearSubtitleButton.addEventListener('click', clearSubtitle);
 translateDictationButton.addEventListener('click', translateDictationInput);
@@ -203,6 +201,7 @@ async function startTranslation(direction) {
 
     peerConnection.ontrack = (event) => {
       remoteAudio.srcObject = event.streams[0];
+      remoteAudio.muted = true;
     };
 
     peerConnection.onconnectionstatechange = () => {
@@ -241,6 +240,7 @@ async function startTranslation(direction) {
     state.dataChannel = dataChannel;
     state.activeDirection = direction;
     state.lastDisplayText = '';
+    state.lastSpokenText = '';
 
     subtitleText.innerHTML = direction === 'host-to-guest'
       ? '<span>Je vous écoute. La traduction apparaîtra ici.</span>'
@@ -407,6 +407,14 @@ function toggleAutoRead() {
   state.autoReadEnabled = !state.autoReadEnabled;
   autoReadButton.classList.toggle('is-on', state.autoReadEnabled);
   autoReadButton.setAttribute('aria-checked', String(state.autoReadEnabled));
+  if (!state.autoReadEnabled) {
+    window.clearTimeout(state.autoReadTimer);
+    state.autoReadTimer = null;
+    state.lastSpokenText = '';
+    window.speechSynthesis?.cancel();
+  } else {
+    scheduleAutoRead();
+  }
   showToast(state.autoReadEnabled ? 'Lecture automatique activée' : 'Lecture automatique désactivée');
 }
 
@@ -554,17 +562,6 @@ function speakSelectedQuickPhrase() {
   showToast('Lecture lancée');
 }
 
-function readLiveText() {
-  const text = state.lastDisplayText.trim();
-  if (!text) {
-    showToast('Aucune traduction à lire');
-    return;
-  }
-
-  speakText(text, currentOutputLanguage());
-  showToast('Lecture lancée');
-}
-
 async function translateEditedQuickPhrase() {
   const text = quickFrench.value.trim();
   const language = guestLanguageSelect.value;
@@ -618,6 +615,8 @@ function closeQuickPhrase() {
 function clearSubtitle() {
   subtitleText.innerHTML = '<span>La traduction s’affichera ici.</span>';
   state.lastDisplayText = '';
+  state.lastSpokenText = '';
+  window.clearTimeout(state.autoReadTimer);
   showToast('Traduction effacée');
 }
 

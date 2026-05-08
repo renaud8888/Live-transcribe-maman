@@ -55,6 +55,8 @@ app.post('/session', async (req, res) => {
           },
           session: {
             model: 'gpt-realtime-translate',
+            instructions,
+            output_modalities: ['text'],
             audio: {
               output: {
                 language: targetLanguage
