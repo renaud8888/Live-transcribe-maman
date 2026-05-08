@@ -53,11 +53,6 @@
           </div>
         </section>
 
-        <details class="settings-panel">
-          <summary>Réglages</summary>
-          <label class="field-label" for="accessCode">Code d’accès</label>
-          <input id="accessCode" type="password" inputmode="numeric" autocomplete="off" placeholder="Code facultatif">
-        </details>
       </section>
 
       <section id="translateView" class="view translate-view" aria-labelledby="translateTitle">
@@ -67,7 +62,6 @@
             <p id="translateTitle">Face-à-face</p>
             <strong id="translateLanguageLabel">Anglais</strong>
           </div>
-          <button id="stopLiveButton" class="stop-button" type="button" disabled>Arrêter</button>
           <div id="statusBadge" class="status status-ready" role="status" aria-live="polite">
             <span class="status-light" aria-hidden="true"></span>
             <span id="statusText">Prêt</span>
@@ -105,6 +99,7 @@
               <textarea id="hostText" class="translation-textarea" autocomplete="off" placeholder="Écrivez ou dictez en français."></textarea>
               <div class="panel-actions">
                 <button id="hostSpeakButton" class="primary-action host-action" type="button">Je parle</button>
+                <button id="stopLiveButton" class="stop-button" type="button" disabled>⏹ Arrêter</button>
                 <button id="readHostButton" class="secondary-action read-action" type="button">Lire</button>
                 <button id="clearHostButton" class="secondary-action clear-action" type="button">Effacer</button>
               </div>

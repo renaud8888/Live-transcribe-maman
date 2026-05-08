@@ -40,8 +40,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Guest speaks',
     read: 'Read',
     clear: 'Clear',
-    connecting: 'Connecting to the microphone...',
-    listeningHost: 'I am listening. The translation will appear here.'
+    connecting: 'Connecting to the microphone...'
   },
   nl: {
     guest: 'Gast',
@@ -50,8 +49,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'De gast spreekt',
     read: 'Voorlezen',
     clear: 'Wissen',
-    connecting: 'Verbinding met de microfoon...',
-    listeningHost: 'Ik luister. De vertaling verschijnt hier.'
+    connecting: 'Verbinding met de microfoon...'
   },
   de: {
     guest: 'Gast',
@@ -60,8 +58,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Der Gast spricht',
     read: 'Vorlesen',
     clear: 'Löschen',
-    connecting: 'Verbindung mit dem Mikrofon...',
-    listeningHost: 'Ich höre zu. Die Übersetzung erscheint hier.'
+    connecting: 'Verbindung mit dem Mikrofon...'
   },
   es: {
     guest: 'Invitado',
@@ -70,8 +67,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Habla el invitado',
     read: 'Leer',
     clear: 'Borrar',
-    connecting: 'Conectando con el micrófono...',
-    listeningHost: 'Estoy escuchando. La traducción aparecerá aquí.'
+    connecting: 'Conectando con el micrófono...'
   },
   it: {
     guest: 'Ospite',
@@ -80,8 +76,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Parla l’ospite',
     read: 'Leggi',
     clear: 'Cancella',
-    connecting: 'Connessione al microfono...',
-    listeningHost: 'Sto ascoltando. La traduzione apparirà qui.'
+    connecting: 'Connessione al microfono...'
   },
   pl: {
     guest: 'Gość',
@@ -90,8 +85,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Gość mówi',
     read: 'Odczytaj',
     clear: 'Wyczyść',
-    connecting: 'Łączenie z mikrofonem...',
-    listeningHost: 'Słucham. Tłumaczenie pojawi się tutaj.'
+    connecting: 'Łączenie z mikrofonem...'
   },
   pt: {
     guest: 'Convidado',
@@ -100,8 +94,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'O convidado fala',
     read: 'Ler',
     clear: 'Apagar',
-    connecting: 'A ligar ao microfone...',
-    listeningHost: 'Estou a ouvir. A tradução aparecerá aqui.'
+    connecting: 'A ligar ao microfone...'
   },
   ar: {
     guest: 'الضيف',
@@ -110,8 +103,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'الضيف يتحدث',
     read: 'استماع',
     clear: 'مسح',
-    connecting: 'جارٍ الاتصال بالميكروفون...',
-    listeningHost: 'أنا أستمع. ستظهر الترجمة هنا.'
+    connecting: 'جارٍ الاتصال بالميكروفون...'
   },
   tr: {
     guest: 'Misafir',
@@ -120,8 +112,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Misafir konuşuyor',
     read: 'Oku',
     clear: 'Temizle',
-    connecting: 'Mikrofona bağlanıyor...',
-    listeningHost: 'Dinliyorum. Çeviri burada görünecek.'
+    connecting: 'Mikrofona bağlanıyor...'
   },
   uk: {
     guest: 'Гість',
@@ -130,8 +121,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'Гість говорить',
     read: 'Прочитати',
     clear: 'Очистити',
-    connecting: 'Підключення до мікрофона...',
-    listeningHost: 'Я слухаю. Переклад з’явиться тут.'
+    connecting: 'Підключення до мікрофона...'
   },
   ja: {
     guest: 'ゲスト',
@@ -140,8 +130,7 @@ const GUEST_PANEL_LABELS = {
     speak: 'ゲストが話す',
     read: '読み上げ',
     clear: '消去',
-    connecting: 'マイクに接続しています...',
-    listeningHost: '聞いています。翻訳がここに表示されます。'
+    connecting: 'マイクに接続しています...'
   },
   ko: {
     guest: '손님',
@@ -150,8 +139,7 @@ const GUEST_PANEL_LABELS = {
     speak: '손님이 말하기',
     read: '읽기',
     clear: '지우기',
-    connecting: '마이크에 연결 중...',
-    listeningHost: '듣고 있습니다. 번역이 여기에 표시됩니다.'
+    connecting: '마이크에 연결 중...'
   },
   zh: {
     guest: '客人',
@@ -160,8 +148,7 @@ const GUEST_PANEL_LABELS = {
     speak: '客人说话',
     read: '朗读',
     clear: '清除',
-    connecting: '正在连接麦克风...',
-    listeningHost: '我正在听。翻译会显示在这里。'
+    connecting: '正在连接麦克风...'
   }
 };
 
@@ -188,6 +175,8 @@ const DEFAULT_MESSAGES = [
   }
 ];
 
+const MAX_LIVE_DURATION_MS = 60_000;
+
 const state = {
   uiState: 'ready',
   peerConnection: null,
@@ -196,6 +185,7 @@ const state = {
   activeDirection: null,
   pendingDirection: null,
   sessionToken: 0,
+  liveTimeout: null,
   translatingFrom: null,
   debounceTimers: {},
   messages: [],
@@ -206,7 +196,6 @@ const homeView = document.querySelector('#homeView');
 const translateView = document.querySelector('#translateView');
 const messagesView = document.querySelector('#messagesView');
 const guestLanguageSelect = document.querySelector('#guestLanguage');
-const accessCode = document.querySelector('#accessCode');
 const openTranslateView = document.querySelector('#openTranslateView');
 const openMessagesView = document.querySelector('#openMessagesView');
 const translateLanguageLabel = document.querySelector('#translateLanguageLabel');
@@ -247,7 +236,6 @@ document.querySelectorAll('[data-go-home]').forEach((button) => {
 openTranslateView.addEventListener('click', () => showView('translate'));
 openMessagesView.addEventListener('click', () => showView('messages'));
 guestLanguageSelect.addEventListener('change', handleLanguageChange);
-accessCode.addEventListener('input', saveAccessCode);
 hostSpeakButton.addEventListener('click', () => startTranslation('host-to-guest'));
 guestSpeakButton.addEventListener('click', () => startTranslation('guest-to-host'));
 stopLiveButton.addEventListener('click', () => stopTranslation('Arrêté'));
@@ -387,11 +375,10 @@ async function startTranslation(direction) {
 
     state.activeDirection = direction;
     state.pendingDirection = null;
-    outputArea.value = direction === 'host-to-guest'
-      ? guestCopy.listeningHost
-      : 'J’écoute l’invité. La traduction apparaîtra ici.';
+    outputArea.value = '';
     updateTextareaDensity(outputArea);
     scrollTextareaToEnd(outputArea);
+    state.liveTimeout = window.setTimeout(() => stopTranslation('Limite de 60 secondes atteinte'), MAX_LIVE_DURATION_MS);
     updateUIState(direction === 'host-to-guest' ? 'listeningHost' : 'listeningGuest', { direction });
     showToast('En écoute');
   } catch (error) {
@@ -406,6 +393,7 @@ async function startTranslation(direction) {
 
 async function stopTranslation(label) {
   state.sessionToken += 1;
+  if (state.liveTimeout) window.clearTimeout(state.liveTimeout);
   if (state.dataChannel) state.dataChannel.close();
   if (state.peerConnection) {
     state.peerConnection.getSenders().forEach((sender) => sender.track?.stop());
@@ -419,10 +407,11 @@ async function stopTranslation(label) {
   state.dataChannel = null;
   state.activeDirection = null;
   state.pendingDirection = null;
+  state.liveTimeout = null;
 
   if (label) {
     updateUIState('stopped');
-    showToast('Arrêté');
+    showToast(label);
   }
 }
 
@@ -673,16 +662,10 @@ function handleLanguageChange() {
   renderMessages();
 }
 
-function saveAccessCode() {
-  localStorage.setItem('gite.accessCode', accessCode.value);
-}
-
 function restorePreferences() {
   const storedLanguage = localStorage.getItem('gite.guestLanguage');
-  const storedCode = localStorage.getItem('gite.accessCode');
 
   if (storedLanguage && LANGUAGE_NAMES[storedLanguage]) guestLanguageSelect.value = storedLanguage;
-  if (storedCode) accessCode.value = storedCode;
 }
 
 function updateLanguageLabels() {
