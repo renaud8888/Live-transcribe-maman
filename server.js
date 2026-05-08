@@ -39,7 +39,6 @@ app.post('/session', async (req, res) => {
       });
     }
 
-    const instructions = buildTranslationInstructions(direction, sourceLanguage, targetLanguage);
     const openAIResponse = await fetch(
       'https://api.openai.com/v1/realtime/translations/client_secrets',
       {
@@ -55,8 +54,6 @@ app.post('/session', async (req, res) => {
           },
           session: {
             model: 'gpt-realtime-translate',
-            instructions,
-            output_modalities: ['text'],
             audio: {
               output: {
                 language: targetLanguage
@@ -174,22 +171,6 @@ app.get('*', (_req, res) => {
 app.listen(PORT, () => {
   console.log(`Interprète du gîte disponible sur http://localhost:${PORT}`);
 });
-
-function buildTranslationInstructions(direction, sourceLanguage, targetLanguage) {
-  const label =
-    direction === 'host-to-guest'
-      ? 'La personne française parle à un invité.'
-      : 'L’invité parle à la personne française.';
-
-  return [
-    label,
-    `Traduis uniquement de ${sourceLanguage} vers ${targetLanguage}.`,
-    'Le contexte est l’accueil dans un gîte familial.',
-    'Réponds naturellement, simplement, avec des phrases courtes et polies.',
-    'Affiche aussi le texte traduit pour servir de sous-titres.',
-    'Ne conserve aucune donnée personnelle.'
-  ].join(' ');
-}
 
 function extractResponseText(payload) {
   if (payload?.output_text) return payload.output_text.trim();
