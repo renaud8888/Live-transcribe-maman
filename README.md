@@ -1,8 +1,8 @@
 # Interprète du gîte
 
-Petite web app mobile/PWA pour aider à parler avec des guests qui ne parlent pas français.
+Petite web app mobile/PWA pour aider à parler avec des invités qui ne parlent pas français.
 
-Elle est volontairement simple : une langue principale, un mode live, un mode éco par dictée clavier, des sous-titres, et des phrases rapides du gîte.
+Elle est volontairement simple : un accueil, une traduction face-à-face, des zones éditables pour écrire ou dicter, et quelques messages utiles du gîte.
 
 > Traduction automatique, à vérifier pour les informations importantes.
 
@@ -39,14 +39,21 @@ Puis ouvrez :
 
 [http://localhost:3000](http://localhost:3000)
 
-## Langues V1
-
-La V1 garde volontairement les langues les plus utiles pour l’accueil :
+## Langues
 
 - Anglais : `en`
 - Néerlandais : `nl`
 - Allemand : `de`
 - Espagnol : `es`
+- Italien : `it`
+- Polonais : `pl`
+- Portugais : `pt`
+- Arabe : `ar`
+- Turc : `tr`
+- Ukrainien : `uk`
+- Japonais : `ja`
+- Coréen : `ko`
+- Chinois : `zh`
 
 ## Test sur téléphone
 
@@ -106,16 +113,17 @@ Voir aussi [docs/deployment-render.md](docs/deployment-render.md).
 - `/session` appelle `https://api.openai.com/v1/realtime/translations/client_secrets`.
 - Le navigateur ouvre ensuite l’appel WebRTC vers `https://api.openai.com/v1/realtime/translations/calls`.
 - La clé `OPENAI_API_KEY` reste toujours côté serveur.
-- Chaque session est unidirectionnelle :
-  - “Je parle au guest” : français vers langue du guest.
-  - “Le guest me parle” : langue du guest vers français.
+- `/api/translate-text` traduit les textes saisis et les messages utiles côté serveur.
+- Chaque session audio est unidirectionnelle :
+  - “Je parle” : français vers langue de l’invité.
+  - “L’invité parle” : langue de l’invité vers français.
 - Quand on change de direction, l’ancienne session WebRTC est fermée proprement.
 
 ## Roadmap V2
 
 1. Mode conversation bidirectionnel plus fluide avec deux sessions simultanées.
 2. Bouton “Lire cette phrase avec une voix OpenAI” via un endpoint serveur `/tts`.
-3. Gestion personnalisée des infos du gîte : Wi-Fi, horaires petit-déjeuner, check-out, parking, règlement, numéro d’urgence.
+3. Gestion personnalisée des infos du gîte : Wi-Fi, horaires petit-déjeuner, départ, parking, règlement, numéro d’urgence.
 4. Fichier `config/gite.json` pour modifier les infos sans toucher au code.
 5. Historique local des conversations, désactivable.
 6. Mode “texte uniquement” si le micro est indisponible.

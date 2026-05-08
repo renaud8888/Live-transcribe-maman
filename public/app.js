@@ -3,7 +3,16 @@ const LANGUAGE_NAMES = {
   en: 'Anglais',
   nl: 'Néerlandais',
   de: 'Allemand',
-  es: 'Espagnol'
+  es: 'Espagnol',
+  it: 'Italien',
+  pl: 'Polonais',
+  pt: 'Portugais',
+  ar: 'Arabe',
+  tr: 'Turc',
+  uk: 'Ukrainien',
+  ja: 'Japonais',
+  ko: 'Coréen',
+  zh: 'Chinois'
 };
 
 const SPEECH_LANGS = {
@@ -11,160 +20,143 @@ const SPEECH_LANGS = {
   en: 'en-US',
   nl: 'nl-NL',
   de: 'de-DE',
-  es: 'es-ES'
+  es: 'es-ES',
+  it: 'it-IT',
+  pl: 'pl-PL',
+  pt: 'pt-PT',
+  ar: 'ar-SA',
+  tr: 'tr-TR',
+  uk: 'uk-UA',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  zh: 'zh-CN'
 };
 
-const QUICK_PHRASES = {
-  wifi: {
-    icon: 'Wi',
-    label: 'Wi-Fi',
-    fr: 'Le réseau Wi-Fi et le mot de passe sont indiqués dans le livret d’accueil.',
-    translations: {
-      en: 'The Wi-Fi network and password are shown in the welcome booklet.',
-      nl: 'Het wifi-netwerk en het wachtwoord staan in het welkomstboekje.',
-      de: 'Das WLAN-Netzwerk und das Passwort stehen in der Gästemappe.',
-      es: 'La red Wi-Fi y la contraseña están indicadas en el folleto de bienvenida.'
-    }
+const DEFAULT_MESSAGES = [
+  {
+    id: 'wifi',
+    title: 'Wi-Fi',
+    fr: 'Le réseau Wi-Fi et le mot de passe sont indiqués dans le livret d’accueil.'
   },
-  breakfast: {
-    icon: '☕',
-    label: 'Petit-déjeuner',
-    fr: 'Le petit-déjeuner est servi à l’horaire convenu ensemble.',
-    translations: {
-      en: 'Breakfast is served at the time we agreed together.',
-      nl: 'Het ontbijt wordt geserveerd op het tijdstip dat we samen hebben afgesproken.',
-      de: 'Das Frühstück wird zu der gemeinsam vereinbarten Uhrzeit serviert.',
-      es: 'El desayuno se sirve a la hora que acordamos juntos.'
-    }
+  {
+    id: 'breakfast',
+    title: 'Petit-déjeuner',
+    fr: 'Le petit-déjeuner est servi à l’horaire convenu ensemble.'
   },
-  checkout: {
-    icon: '11h',
-    label: 'Check-out',
-    fr: 'Le check-out se fait avant 11 heures, sauf accord différent.',
-    translations: {
-      en: 'Check-out is before 11 a.m., unless we agreed otherwise.',
-      nl: 'Uitchecken is vóór 11 uur, tenzij we iets anders hebben afgesproken.',
-      de: 'Der Check-out ist vor 11 Uhr, sofern nichts anderes vereinbart wurde.',
-      es: 'La salida es antes de las 11, salvo que hayamos acordado otra cosa.'
-    }
+  {
+    id: 'checkout',
+    title: 'Départ / check-out',
+    fr: 'Le départ se fait avant 11 heures, sauf accord différent.'
   },
-  emergency: {
-    icon: 'SOS',
-    label: 'Urgence',
-    fr: 'En cas d’urgence, appelez le 112 ou venez me chercher immédiatement.',
-    translations: {
-      en: 'In an emergency, call 112 or come and get me immediately.',
-      nl: 'Bel bij noodgeval 112 of kom mij onmiddellijk halen.',
-      de: 'Rufen Sie im Notfall 112 an oder holen Sie mich sofort.',
-      es: 'En caso de emergencia, llame al 112 o venga a buscarme inmediatamente.'
-    }
+  {
+    id: 'emergency',
+    title: 'Urgence',
+    fr: 'En cas d’urgence, appelez le 112 ou venez me chercher immédiatement.'
   }
-};
+];
 
 const state = {
+  uiState: 'ready',
   peerConnection: null,
   localStream: null,
   dataChannel: null,
   activeDirection: null,
-  currentQuickPhrase: null,
-  uiState: 'ready',
-  mode: 'realtime',
-  lastDisplayText: '',
-  dictationDirection: null,
-  autoStopTimer: null,
-  autoReadEnabled: false,
-  autoReadTimer: null,
-  lastSpokenText: ''
+  translatingFrom: null,
+  debounceTimers: {},
+  messages: [],
+  activeDialogLanguage: null
 };
 
+const homeView = document.querySelector('#homeView');
+const translateView = document.querySelector('#translateView');
+const messagesView = document.querySelector('#messagesView');
 const guestLanguageSelect = document.querySelector('#guestLanguage');
-const hostToGuestButton = document.querySelector('#hostToGuestButton');
-const guestToHostButton = document.querySelector('#guestToHostButton');
-const stopButton = document.querySelector('#stopButton');
-const modeRealtimeButton = document.querySelector('#modeRealtimeButton');
-const modeDictationButton = document.querySelector('#modeDictationButton');
+const accessCode = document.querySelector('#accessCode');
+const openTranslateView = document.querySelector('#openTranslateView');
+const openMessagesView = document.querySelector('#openMessagesView');
+const translateLanguageLabel = document.querySelector('#translateLanguageLabel');
+const messagesLanguageLabel = document.querySelector('#messagesLanguageLabel');
+const guestPanelLanguage = document.querySelector('#guestPanelLanguage');
 const statusBadge = document.querySelector('#statusBadge');
 const statusText = document.querySelector('#statusText');
-const subtitleText = document.querySelector('#subtitleText');
-const subtitleDirection = document.querySelector('#subtitleDirection');
-const errorMessage = document.querySelector('#errorMessage');
-const quickPhraseButtons = document.querySelector('#quickPhraseButtons');
-const quickPhraseResult = document.querySelector('#quickPhraseResult');
-const quickTitle = document.querySelector('#quickTitle');
-const quickFrench = document.querySelector('#quickFrench');
-const quickLanguageLabel = document.querySelector('#quickLanguageLabel');
-const quickTranslated = document.querySelector('#quickTranslated');
-const speakQuickButton = document.querySelector('#speakQuickButton');
-const showLargeButton = document.querySelector('#showLargeButton');
-const showLiveLargeButton = document.querySelector('#showLiveLargeButton');
-const autoReadButton = document.querySelector('#autoReadButton');
-const clearSubtitleButton = document.querySelector('#clearSubtitleButton');
-const dictationPanel = document.querySelector('#dictationPanel');
-const dictationLabel = document.querySelector('#dictationLabel');
-const dictationText = document.querySelector('#dictationText');
-const translateDictationButton = document.querySelector('#translateDictationButton');
-const hostDirectionLabel = document.querySelector('#hostDirectionLabel');
-const guestDirectionLabel = document.querySelector('#guestDirectionLabel');
-const liveTitle = document.querySelector('#liveTitle');
-const listeningBadge = document.querySelector('#listeningBadge');
-const closePhraseButton = document.querySelector('#closePhraseButton');
+const hostText = document.querySelector('#hostText');
+const guestText = document.querySelector('#guestText');
+const hostSpeakButton = document.querySelector('#hostSpeakButton');
+const guestSpeakButton = document.querySelector('#guestSpeakButton');
+const readHostButton = document.querySelector('#readHostButton');
+const readGuestButton = document.querySelector('#readGuestButton');
+const clearHostButton = document.querySelector('#clearHostButton');
+const clearGuestButton = document.querySelector('#clearGuestButton');
+const messageCards = document.querySelector('#messageCards');
+const saveMessagesButton = document.querySelector('#saveMessagesButton');
 const toast = document.querySelector('#toast');
 const guestDisplayDialog = document.querySelector('#guestDisplayDialog');
 const guestDisplayLanguage = document.querySelector('#guestDisplayLanguage');
+const guestDisplayTitle = document.querySelector('#guestDisplayTitle');
 const guestDisplayText = document.querySelector('#guestDisplayText');
+const guestDisplayFrench = document.querySelector('#guestDisplayFrench');
 const closeGuestDisplayButton = document.querySelector('#closeGuestDisplayButton');
 const speakGuestDisplayButton = document.querySelector('#speakGuestDisplayButton');
 const remoteAudio = document.querySelector('#remoteAudio');
 
-hostToGuestButton.addEventListener('click', () => startSelectedMode('host-to-guest'));
-guestToHostButton.addEventListener('click', () => startSelectedMode('guest-to-host'));
-stopButton.addEventListener('click', () => stopTranslation('Arrêté'));
-modeRealtimeButton.addEventListener('click', () => setMode('realtime'));
-modeDictationButton.addEventListener('click', () => setMode('dictation'));
-guestLanguageSelect.addEventListener('change', handleLanguageChange);
-quickFrench.addEventListener('input', () => {
-  window.clearTimeout(quickFrench.translateTimeout);
-  quickFrench.translateTimeout = window.setTimeout(translateEditedQuickPhrase, 650);
+document.querySelectorAll('[data-go-home]').forEach((button) => {
+  button.addEventListener('click', () => {
+    stopTranslation('Arrêté');
+    showView('home');
+  });
 });
-speakQuickButton.addEventListener('click', speakSelectedQuickPhrase);
-showLargeButton.addEventListener('click', () => showGuestDisplay(quickTranslated.textContent, guestLanguageSelect.value));
-showLiveLargeButton.addEventListener('click', () => showGuestDisplay(state.lastDisplayText, currentOutputLanguage()));
-autoReadButton.addEventListener('click', toggleAutoRead);
-clearSubtitleButton.addEventListener('click', clearSubtitle);
-translateDictationButton.addEventListener('click', translateDictationInput);
-closePhraseButton.addEventListener('click', closeQuickPhrase);
+
+openTranslateView.addEventListener('click', () => showView('translate'));
+openMessagesView.addEventListener('click', () => showView('messages'));
+guestLanguageSelect.addEventListener('change', handleLanguageChange);
+accessCode.addEventListener('input', saveAccessCode);
+hostSpeakButton.addEventListener('click', () => startTranslation('host-to-guest'));
+guestSpeakButton.addEventListener('click', () => startTranslation('guest-to-host'));
+readHostButton.addEventListener('click', () => speakText(hostText.value, 'fr'));
+readGuestButton.addEventListener('click', () => speakText(guestText.value, guestLanguageSelect.value));
+clearHostButton.addEventListener('click', () => clearPanel('host'));
+clearGuestButton.addEventListener('click', () => clearPanel('guest'));
+hostText.addEventListener('input', () => scheduleTextareaTranslation('host'));
+guestText.addEventListener('input', () => scheduleTextareaTranslation('guest'));
+hostText.addEventListener('blur', () => flushTextareaTranslation('host'));
+guestText.addEventListener('blur', () => flushTextareaTranslation('guest'));
+saveMessagesButton.addEventListener('click', () => {
+  saveMessages();
+  showToast('Message enregistré');
+});
 closeGuestDisplayButton.addEventListener('click', () => guestDisplayDialog.close());
-speakGuestDisplayButton.addEventListener('click', speakGuestDisplay);
+speakGuestDisplayButton.addEventListener('click', () => {
+  speakText(guestDisplayText.textContent, state.activeDialogLanguage || guestLanguageSelect.value);
+});
 
 restorePreferences();
-setMode(state.mode, { silent: true });
-renderQuickPhraseButtons();
+state.messages = loadMessages();
 updateLanguageLabels();
+renderMessages();
 updateUIState('ready');
 registerServiceWorker();
 
-function startSelectedMode(direction) {
-  if (state.mode === 'dictation') {
-    startDictationTranslation(direction);
-    return;
-  }
+function showView(viewName) {
+  homeView.classList.toggle('is-active', viewName === 'home');
+  translateView.classList.toggle('is-active', viewName === 'translate');
+  messagesView.classList.toggle('is-active', viewName === 'messages');
 
-  startTranslation(direction);
+  if (viewName === 'messages') renderMessages();
+  if (viewName === 'translate') updateUIState(state.uiState);
 }
 
 async function startTranslation(direction) {
-  clearError();
+  clearDebounces();
+  await stopTranslation(null);
   updateUIState('connecting', { direction });
-  showToast('Connexion au traducteur...');
-  subtitleText.textContent = 'Connexion au micro et au service de traduction...';
-  state.lastDisplayText = subtitleText.textContent;
+
+  const guestLanguage = guestLanguageSelect.value;
+  const sourceLanguage = direction === 'host-to-guest' ? 'fr' : guestLanguage;
+  const targetLanguage = direction === 'host-to-guest' ? guestLanguage : 'fr';
+  const outputArea = direction === 'host-to-guest' ? guestText : hostText;
+  outputArea.value = 'Connexion au micro...';
 
   try {
-    await stopTranslation(null);
-
-    const guestLanguage = guestLanguageSelect.value;
-    const sourceLanguage = direction === 'host-to-guest' ? 'fr' : guestLanguage;
-    const targetLanguage = direction === 'host-to-guest' ? guestLanguage : 'fr';
     const localStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -175,26 +167,15 @@ async function startTranslation(direction) {
 
     const sessionResponse = await fetch('/session', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        direction,
-        sourceLanguage,
-        targetLanguage
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ direction, sourceLanguage, targetLanguage })
     });
-
     const sessionPayload = await sessionResponse.json().catch(() => ({}));
 
-    if (!sessionResponse.ok) {
-      throw new Error(readableServerError(sessionPayload));
-    }
+    if (!sessionResponse.ok) throw new Error(readableServerError(sessionPayload));
 
     const clientSecret = sessionPayload.client_secret;
-    if (!clientSecret) {
-      throw new Error('OpenAI n’a pas renvoyé de client secret temporaire.');
-    }
+    if (!clientSecret) throw new Error('OpenAI n’a pas renvoyé de client secret temporaire.');
 
     const peerConnection = new RTCPeerConnection();
     const dataChannel = peerConnection.createDataChannel('oai-events');
@@ -206,8 +187,8 @@ async function startTranslation(direction) {
 
     peerConnection.onconnectionstatechange = () => {
       if (['failed', 'disconnected'].includes(peerConnection.connectionState)) {
-        showError('Problème de connexion. Vous pouvez arrêter puis relancer la traduction.');
         updateUIState('error');
+        showToast('Erreur réseau');
       }
     };
 
@@ -239,143 +220,27 @@ async function startTranslation(direction) {
     state.localStream = localStream;
     state.dataChannel = dataChannel;
     state.activeDirection = direction;
-    state.lastDisplayText = '';
-    state.lastSpokenText = '';
-
-    subtitleText.innerHTML = direction === 'host-to-guest'
-      ? '<span>Je vous écoute. La traduction apparaîtra ici.</span>'
-      : '<span>J’écoute l’invité. La traduction apparaîtra ici.</span>';
+    outputArea.value = direction === 'host-to-guest'
+      ? 'Je vous écoute. La traduction apparaîtra ici.'
+      : 'J’écoute l’invité. La traduction apparaîtra ici.';
     updateUIState(direction === 'host-to-guest' ? 'listeningHost' : 'listeningGuest', { direction });
-    scheduleAutoStop();
-    showToast('Micro en écoute');
+    showToast('En écoute');
   } catch (error) {
     await stopTranslation(null);
     const message = readableClientError(error);
     updateUIState('error');
-    showError(message);
-    showToast(message);
+    showToast(message.includes('Micro') ? 'Micro refusé' : message);
+    outputArea.value = '';
   }
 }
 
-function setMode(mode, options = {}) {
-  const modeChanged = state.mode !== mode;
-  if (modeChanged) {
-    stopTranslation(null);
-  }
-
-  state.mode = mode;
-  localStorage.setItem('gite.mode', mode);
-  modeRealtimeButton.classList.toggle('is-selected', mode === 'realtime');
-  modeDictationButton.classList.toggle('is-selected', mode === 'dictation');
-  modeRealtimeButton.setAttribute('aria-pressed', String(mode === 'realtime'));
-  modeDictationButton.setAttribute('aria-pressed', String(mode === 'dictation'));
-  dictationPanel.hidden = mode !== 'dictation';
-  autoReadButton.hidden = mode !== 'realtime';
-  listeningBadge.textContent = mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
-  if (mode === 'realtime') {
-    state.dictationDirection = null;
-    state.activeDirection = null;
-    dictationText.value = '';
-    subtitleText.innerHTML = '<span>La traduction s’affichera ici.</span>';
-    state.lastDisplayText = '';
-  } else {
-    subtitleText.innerHTML = '<span>Choisissez qui parle, puis dictez avec le clavier iPhone.</span>';
-    state.lastDisplayText = '';
-  }
-  updateUIState('ready');
-  if (!options.silent) {
-    showToast(mode === 'dictation' ? 'Mode Éco activé' : 'Mode Live activé');
-  }
-}
-
-function startDictationTranslation(direction) {
-  clearError();
-  stopTranslation(null);
-  state.dictationDirection = direction;
-  state.activeDirection = direction;
-  updateUIState(direction === 'host-to-guest' ? 'listeningHost' : 'listeningGuest', { direction });
-  liveTitle.textContent = 'Dictée';
-  dictationLabel.textContent = direction === 'host-to-guest'
-    ? 'Dictez votre phrase en français'
-    : `Dictez la phrase de l’invité en ${LANGUAGE_NAMES[guestLanguageSelect.value].toLowerCase()}`;
-  subtitleText.innerHTML = '<span>Le résultat apparaîtra ici après traduction.</span>';
-  state.lastDisplayText = '';
-  dictationPanel.hidden = false;
-  dictationText.value = '';
-  window.setTimeout(() => dictationText.focus(), 50);
-  showToast('Dictée clavier prête');
-}
-
-async function translateDictationInput() {
-  const text = dictationText.value.trim();
-  const direction = state.dictationDirection || state.activeDirection;
-  if (!direction) {
-    showToast('Choisissez qui parle');
-    return;
-  }
-  if (!text) {
-    showToast('Dictez ou écrivez une phrase');
-    dictationText.focus();
-    return;
-  }
-  const guestLanguage = guestLanguageSelect.value;
-  const sourceLanguage = direction === 'host-to-guest' ? 'fr' : guestLanguage;
-  const targetLanguage = direction === 'host-to-guest' ? guestLanguage : 'fr';
-
-  subtitleText.textContent = 'Traduction en cours...';
-  translateDictationButton.disabled = true;
-  await translateDictatedText(text, sourceLanguage, targetLanguage);
-  translateDictationButton.disabled = false;
-}
-
-async function translateDictatedText(text, sourceLanguage, targetLanguage) {
-  try {
-    const response = await fetch('/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text,
-        sourceLanguage,
-        targetLanguage
-      })
-    });
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(readableServerError(payload));
-    }
-
-    updateUIState('stopped');
-    state.lastDisplayText = payload.translation || '';
-    subtitleText.textContent = state.lastDisplayText || 'Traduction indisponible.';
-    liveTitle.textContent = 'Traduction';
-    subtitleDirection.textContent = `${sourceLanguage.toUpperCase()} → ${targetLanguage.toUpperCase()}`;
-    showToast('Traduction prête');
-  } catch (error) {
-    showError(readableClientError(error));
-    showToast(readableClientError(error));
-    updateUIState('error');
-  }
-}
-
-async function stopTranslation(label = 'Arrêté') {
-  clearAutoStop();
-
+async function stopTranslation(label) {
   if (state.dataChannel) state.dataChannel.close();
-
   if (state.peerConnection) {
-    state.peerConnection.getSenders().forEach((sender) => {
-      if (sender.track) sender.track.stop();
-    });
+    state.peerConnection.getSenders().forEach((sender) => sender.track?.stop());
     state.peerConnection.close();
   }
-
-  if (state.localStream) {
-    state.localStream.getTracks().forEach((track) => track.stop());
-  }
+  if (state.localStream) state.localStream.getTracks().forEach((track) => track.stop());
 
   remoteAudio.srcObject = null;
   state.peerConnection = null;
@@ -385,54 +250,12 @@ async function stopTranslation(label = 'Arrêté') {
 
   if (label) {
     updateUIState('stopped');
-    showToast('Session arrêtée');
+    showToast('Arrêté');
   }
-}
-
-function scheduleAutoStop() {
-  clearAutoStop();
-  state.autoStopTimer = window.setTimeout(() => {
-    stopTranslation('Arrêté');
-    showToast('Arrêt automatique après 1 minute');
-  }, 60_000);
-}
-
-function clearAutoStop() {
-  if (!state.autoStopTimer) return;
-  window.clearTimeout(state.autoStopTimer);
-  state.autoStopTimer = null;
-}
-
-function toggleAutoRead() {
-  state.autoReadEnabled = !state.autoReadEnabled;
-  autoReadButton.classList.toggle('is-on', state.autoReadEnabled);
-  autoReadButton.setAttribute('aria-checked', String(state.autoReadEnabled));
-  if (!state.autoReadEnabled) {
-    window.clearTimeout(state.autoReadTimer);
-    state.autoReadTimer = null;
-    state.lastSpokenText = '';
-    window.speechSynthesis?.cancel();
-  } else {
-    scheduleAutoRead();
-  }
-  showToast(state.autoReadEnabled ? 'Lecture automatique activée' : 'Lecture automatique désactivée');
-}
-
-function scheduleAutoRead() {
-  if (!state.autoReadEnabled || !state.lastDisplayText.trim()) return;
-
-  window.clearTimeout(state.autoReadTimer);
-  state.autoReadTimer = window.setTimeout(() => {
-    const text = state.lastDisplayText.trim();
-    if (!text || text === state.lastSpokenText) return;
-    state.lastSpokenText = text;
-    speakText(text, currentOutputLanguage());
-  }, 1400);
 }
 
 function handleRealtimeEvent(event) {
   let payload;
-
   try {
     payload = JSON.parse(event.data);
   } catch {
@@ -448,189 +271,180 @@ function handleRealtimeEvent(event) {
     payload?.response?.output_text;
 
   if (typeof text === 'string' && text.trim()) {
-    const alreadyHasTranslation = Boolean(state.lastDisplayText.trim());
-    subtitleText.textContent = payload.type?.includes('delta')
-      ? `${alreadyHasTranslation ? subtitleText.textContent : ''}${text}`.trim()
-      : text;
-    state.lastDisplayText = subtitleText.textContent;
-    liveTitle.textContent = 'Traduction';
-    scheduleAutoRead();
+    const outputArea = state.activeDirection === 'guest-to-host' ? hostText : guestText;
+    const isDelta = payload.type?.includes('delta');
+    outputArea.value = isDelta ? `${outputArea.value || ''}${text}` : text;
+    updateUIState('translatingText');
+    window.setTimeout(() => {
+      if (state.activeDirection) {
+        updateUIState(state.activeDirection === 'guest-to-host' ? 'listeningGuest' : 'listeningHost');
+      }
+    }, 600);
   }
 
   if (payload.type?.includes('error')) {
-    showError(payload.error?.message || 'Erreur OpenAI pendant la traduction.');
     updateUIState('error');
+    showToast('Erreur réseau');
   }
+}
+
+function scheduleTextareaTranslation(source) {
+  if (state.translatingFrom) return;
+  window.clearTimeout(state.debounceTimers[source]);
+  state.debounceTimers[source] = window.setTimeout(() => translateFromTextarea(source), 800);
+}
+
+function flushTextareaTranslation(source) {
+  window.clearTimeout(state.debounceTimers[source]);
+  translateFromTextarea(source);
+}
+
+async function translateFromTextarea(source) {
+  const isHost = source === 'host';
+  const sourceArea = isHost ? hostText : guestText;
+  const targetArea = isHost ? guestText : hostText;
+  const text = sourceArea.value.trim();
+
+  if (!text || state.translatingFrom === source) return;
+
+  const guestLanguage = guestLanguageSelect.value;
+  const sourceLanguage = isHost ? 'fr' : guestLanguage;
+  const targetLanguage = isHost ? guestLanguage : 'fr';
+
+  state.translatingFrom = source;
+  updateUIState('translatingText');
+
+  try {
+    const translation = await translateText(text, sourceLanguage, targetLanguage);
+    targetArea.value = translation;
+  } catch (error) {
+    showToast(readableClientError(error).includes('réseau') ? 'Erreur réseau' : readableClientError(error));
+    updateUIState('error');
+  } finally {
+    state.translatingFrom = null;
+    if (state.uiState === 'translatingText') updateUIState('ready');
+  }
+}
+
+async function translateText(text, sourceLanguage, targetLanguage) {
+  const response = await fetch('/api/translate-text', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, sourceLanguage, targetLanguage })
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) throw new Error(readableServerError(payload));
+  return payload.translation || '';
 }
 
 function updateUIState(nextState, options = {}) {
   state.uiState = nextState;
   const direction = options.direction || state.activeDirection;
-  const guestLanguage = guestLanguageSelect.value;
-  const isHost = direction === 'host-to-guest';
-  const isGuest = direction === 'guest-to-host';
-  const statusLabels = {
+  const labels = {
     ready: 'Prêt',
     connecting: 'Connexion',
-    listeningHost: state.mode === 'dictation' ? 'Dictée' : 'Écoute',
-    listeningGuest: state.mode === 'dictation' ? 'Dictée' : 'Écoute',
+    listeningHost: 'En écoute',
+    listeningGuest: 'En écoute',
+    translatingText: 'Traduction active',
     stopped: 'Arrêté',
     error: 'Erreur'
   };
 
   statusBadge.className = `status status-${nextState}`;
-  statusText.textContent = statusLabels[nextState] || 'Prêt';
-  stopButton.hidden = state.mode === 'dictation' || !['connecting', 'listeningHost', 'listeningGuest'].includes(nextState);
-
-  hostToGuestButton.classList.toggle('is-active', nextState === 'listeningHost');
-  guestToHostButton.classList.toggle('is-active', nextState === 'listeningGuest');
-  hostToGuestButton.classList.toggle('is-loading', nextState === 'connecting' && isHost);
-  guestToHostButton.classList.toggle('is-loading', nextState === 'connecting' && isGuest);
-  hostToGuestButton.classList.toggle('is-muted', ['connecting', 'listeningGuest'].includes(nextState));
-  guestToHostButton.classList.toggle('is-muted', ['connecting', 'listeningHost'].includes(nextState));
-
-  if (nextState === 'ready') {
-    liveTitle.textContent = 'Traduction';
-    subtitleDirection.textContent = 'En attente';
-    listeningBadge.textContent = state.mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
-  }
-
-  if (nextState === 'connecting') {
-    liveTitle.textContent = 'Connexion au traducteur';
-    subtitleDirection.textContent = isHost ? `FR → ${guestLanguage.toUpperCase()}` : `${guestLanguage.toUpperCase()} → FR`;
-    listeningBadge.textContent = 'Connexion...';
-  }
-
-  if (nextState === 'listeningHost' || nextState === 'listeningGuest') {
-    liveTitle.textContent = isHost ? 'Vous parlez' : 'L’invité parle';
-    subtitleDirection.textContent = isHost ? `FR → ${guestLanguage.toUpperCase()}` : `${guestLanguage.toUpperCase()} → FR`;
-    listeningBadge.textContent = state.mode === 'dictation' ? 'Dictée prête' : 'Micro en écoute';
-  }
-
-  if (nextState === 'stopped') {
-    liveTitle.textContent = 'Session arrêtée';
-    subtitleDirection.textContent = 'Arrêté';
-    listeningBadge.textContent = state.mode === 'dictation' ? 'Dictée prête' : 'Micro prêt';
-  }
-
-  if (nextState === 'error') {
-    liveTitle.textContent = 'Une action est nécessaire';
-    listeningBadge.textContent = 'À vérifier';
-  }
-
-  listeningBadge.classList.toggle('is-live', ['listeningHost', 'listeningGuest'].includes(nextState));
+  statusText.textContent = labels[nextState] || 'Prêt';
+  hostSpeakButton.classList.toggle('is-active', nextState === 'listeningHost' || direction === 'host-to-guest');
+  guestSpeakButton.classList.toggle('is-active', nextState === 'listeningGuest' || direction === 'guest-to-host');
+  hostSpeakButton.disabled = nextState === 'connecting';
+  guestSpeakButton.disabled = nextState === 'connecting';
 }
 
-function renderQuickPhraseButtons() {
-  quickPhraseButtons.innerHTML = '';
+function renderMessages() {
+  messageCards.innerHTML = '';
+  const language = guestLanguageSelect.value;
 
-  Object.entries(QUICK_PHRASES).forEach(([key, phrase]) => {
-    const button = document.createElement('button');
-    const preview = phrase.fr.length > 54 ? `${phrase.fr.slice(0, 54)}...` : phrase.fr;
-    button.type = 'button';
-    button.dataset.key = key;
-    button.dataset.icon = phrase.icon;
-    button.innerHTML = `<span><strong>${phrase.label}</strong><small>${preview}</small></span>`;
-    button.addEventListener('click', () => {
-      state.currentQuickPhrase = key;
-      renderSelectedQuickPhrase();
+  state.messages.slice(0, 4).forEach((message) => {
+    const card = document.createElement('article');
+    card.className = 'message-card';
+    card.dataset.id = message.id;
+    card.innerHTML = `
+      <input class="message-title" value="${escapeAttribute(message.title)}" aria-label="Titre du message">
+      <textarea class="message-french" rows="3" aria-label="Texte français">${escapeHtml(message.fr)}</textarea>
+      <div class="message-translation" lang="${language}">${escapeHtml(message.translations?.[language] || '')}</div>
+      <div class="message-actions">
+        <button class="secondary-action translate-message" type="button">Traduire</button>
+        <button class="secondary-action read-message" type="button">Lire</button>
+        <button class="primary-action guest-action show-message" type="button">Afficher à l’invité</button>
+      </div>
+    `;
+
+    const titleInput = card.querySelector('.message-title');
+    const frenchInput = card.querySelector('.message-french');
+    const translated = card.querySelector('.message-translation');
+
+    titleInput.addEventListener('input', () => updateMessage(message.id, { title: titleInput.value }));
+    frenchInput.addEventListener('input', () => updateMessage(message.id, { fr: frenchInput.value }));
+    card.querySelector('.translate-message').addEventListener('click', () => translateMessage(message.id, card));
+    card.querySelector('.read-message').addEventListener('click', () => speakText(translated.textContent, language));
+    card.querySelector('.show-message').addEventListener('click', () => {
+      showGuestDisplay({
+        title: titleInput.value,
+        text: translated.textContent,
+        french: frenchInput.value,
+        language
+      });
     });
-    quickPhraseButtons.append(button);
+    messageCards.append(card);
   });
 }
 
-function renderSelectedQuickPhrase() {
-  if (!state.currentQuickPhrase) return;
-
+async function translateMessage(id, card) {
+  const message = state.messages.find((item) => item.id === id);
   const language = guestLanguageSelect.value;
-  const phrase = QUICK_PHRASES[state.currentQuickPhrase];
-  quickTitle.value = phrase.label;
-  quickFrench.value = phrase.fr;
-  quickLanguageLabel.textContent = LANGUAGE_NAMES[language];
-  quickTranslated.textContent = phrase.translations[language] || phrase.translations.en;
-  quickPhraseResult.hidden = false;
+  const translated = card.querySelector('.message-translation');
+  const button = card.querySelector('.translate-message');
 
-  quickPhraseButtons.querySelectorAll('button').forEach((button) => {
-    button.classList.toggle('is-selected', button.dataset.key === state.currentQuickPhrase);
-  });
+  if (!message?.fr.trim()) return;
 
-  quickPhraseResult.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-}
-
-function speakSelectedQuickPhrase() {
-  speakText(quickTranslated.textContent, guestLanguageSelect.value);
-  showToast('Lecture lancée');
-}
-
-async function translateEditedQuickPhrase() {
-  const text = quickFrench.value.trim();
-  const language = guestLanguageSelect.value;
-
-  if (!text) {
-    quickTranslated.textContent = '';
-    return;
-  }
-
-  if (state.currentQuickPhrase) {
-    const phrase = QUICK_PHRASES[state.currentQuickPhrase];
-    if (text === phrase.fr) {
-      quickTranslated.textContent = phrase.translations[language] || phrase.translations.en;
-      return;
-    }
-  }
-
-  quickTranslated.textContent = 'Traduction en cours...';
+  button.disabled = true;
+  translated.textContent = 'Traduction en cours...';
+  updateUIState('translatingText');
 
   try {
-    const response = await fetch('/translate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text,
-        targetLanguage: language
-      })
-    });
-
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(readableServerError(payload));
-    }
-
-    quickTranslated.textContent = payload.translation || 'Traduction indisponible.';
+    const translation = await translateText(message.fr, 'fr', language);
+    message.translations = { ...(message.translations || {}), [language]: translation };
+    translated.textContent = translation;
+    saveMessages();
+    showToast('Message enregistré');
   } catch (error) {
-    quickTranslated.textContent = 'Impossible de retraduire pour le moment.';
-    showToast(readableClientError(error));
+    translated.textContent = '';
+    showToast('Erreur réseau');
+    updateUIState('error');
+  } finally {
+    button.disabled = false;
+    if (state.uiState === 'translatingText') updateUIState('ready');
   }
 }
 
-function closeQuickPhrase() {
-  quickPhraseResult.hidden = true;
-  state.currentQuickPhrase = null;
-  quickPhraseButtons.querySelectorAll('button').forEach((button) => button.classList.remove('is-selected'));
+function updateMessage(id, values) {
+  const message = state.messages.find((item) => item.id === id);
+  if (!message) return;
+  Object.assign(message, values);
+  saveMessages();
 }
 
-function clearSubtitle() {
-  subtitleText.innerHTML = '<span>La traduction s’affichera ici.</span>';
-  state.lastDisplayText = '';
-  state.lastSpokenText = '';
-  window.clearTimeout(state.autoReadTimer);
-  showToast('Traduction effacée');
-}
-
-function showGuestDisplay(text, language) {
+function showGuestDisplay({ title, text, french, language }) {
   const cleanText = (text || '').trim();
   if (!cleanText) {
-    showToast('Aucune phrase à afficher');
+    showToast('Traduisez d’abord le message');
     return;
   }
 
-  const title = quickTitle?.value?.trim();
-  guestDisplayLanguage.textContent = title || LANGUAGE_NAMES[language] || 'Traduction';
+  state.activeDialogLanguage = language;
+  guestDisplayLanguage.textContent = LANGUAGE_NAMES[language] || 'Langue de l’invité';
+  guestDisplayTitle.textContent = title || 'Message';
   guestDisplayText.textContent = cleanText;
-  guestDisplayText.dataset.language = language;
+  guestDisplayFrench.textContent = french || '';
 
   if (typeof guestDisplayDialog.showModal === 'function') {
     guestDisplayDialog.showModal();
@@ -639,73 +453,84 @@ function showGuestDisplay(text, language) {
   }
 }
 
-function speakGuestDisplay() {
-  speakText(guestDisplayText.textContent, guestDisplayText.dataset.language || guestLanguageSelect.value);
-  showToast('Lecture lancée');
+function clearPanel(panel) {
+  if (panel === 'host') hostText.value = '';
+  if (panel === 'guest') guestText.value = '';
+  showToast('Traduction effacée');
 }
 
 function speakText(text, language) {
-  if (!text) return;
+  const cleanText = (text || '').trim();
+  if (!cleanText) return;
 
   if (!('speechSynthesis' in window)) {
-    const message = 'La lecture à voix haute du navigateur n’est pas disponible sur cet appareil.';
-    showError(message);
-    showToast(message);
+    showToast('Lecture audio indisponible');
     updateUIState('error');
     return;
   }
 
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(cleanText);
   utterance.lang = SPEECH_LANGS[language] || language;
   utterance.rate = 0.92;
   utterance.onerror = () => showToast('Lecture audio indisponible');
   window.speechSynthesis.cancel();
   window.speechSynthesis.resume();
   window.speechSynthesis.speak(utterance);
+  showToast('Lecture lancée');
 }
 
 function handleLanguageChange() {
   localStorage.setItem('gite.guestLanguage', guestLanguageSelect.value);
   updateLanguageLabels();
-  renderSelectedQuickPhrase();
-  updateUIState(state.uiState);
+  renderMessages();
+}
+
+function saveAccessCode() {
+  localStorage.setItem('gite.accessCode', accessCode.value);
 }
 
 function restorePreferences() {
   const storedLanguage = localStorage.getItem('gite.guestLanguage');
-  const storedMode = localStorage.getItem('gite.mode');
+  const storedCode = localStorage.getItem('gite.accessCode');
 
-  if (storedLanguage && LANGUAGE_NAMES[storedLanguage]) {
-    guestLanguageSelect.value = storedLanguage;
-  }
-
-  if (['realtime', 'dictation'].includes(storedMode)) {
-    state.mode = storedMode;
-  }
+  if (storedLanguage && LANGUAGE_NAMES[storedLanguage]) guestLanguageSelect.value = storedLanguage;
+  if (storedCode) accessCode.value = storedCode;
 }
 
 function updateLanguageLabels() {
   const language = LANGUAGE_NAMES[guestLanguageSelect.value] || 'Anglais';
-  hostDirectionLabel.textContent = `Français → ${language}`;
-  guestDirectionLabel.textContent = `${language} → Français`;
+  translateLanguageLabel.textContent = language;
+  messagesLanguageLabel.textContent = language;
+  guestPanelLanguage.textContent = language;
 }
 
-function currentOutputLanguage() {
-  if (state.activeDirection === 'guest-to-host') return 'fr';
-  return guestLanguageSelect.value;
+function loadMessages() {
+  const stored = localStorage.getItem('gite.messages');
+  if (!stored) return DEFAULT_MESSAGES.map((message) => ({ ...message, translations: {} }));
+
+  try {
+    const parsed = JSON.parse(stored);
+    if (Array.isArray(parsed)) {
+      return DEFAULT_MESSAGES.map((fallback, index) => ({
+        ...fallback,
+        ...(parsed[index] || {}),
+        translations: parsed[index]?.translations || {}
+      }));
+    }
+  } catch {
+    localStorage.removeItem('gite.messages');
+  }
+
+  return DEFAULT_MESSAGES.map((message) => ({ ...message, translations: {} }));
 }
 
-function clearError() {
-  errorMessage.hidden = true;
-  errorMessage.textContent = '';
+function saveMessages() {
+  localStorage.setItem('gite.messages', JSON.stringify(state.messages.slice(0, 4)));
 }
 
-function showError(message) {
-  const help = state.mode === 'realtime'
-    ? 'Autorisez le micro, puis réessayez.'
-    : 'Vérifiez la phrase, puis réessayez.';
-  errorMessage.textContent = `${message} ${help}`;
-  errorMessage.hidden = false;
+function clearDebounces() {
+  Object.values(state.debounceTimers).forEach((timer) => window.clearTimeout(timer));
+  state.debounceTimers = {};
 }
 
 function showToast(message) {
@@ -716,33 +541,30 @@ function showToast(message) {
   showToast.timeoutId = window.setTimeout(() => {
     toast.classList.remove('is-visible');
     toast.hidden = true;
-  }, 2400);
+  }, 2200);
 }
 
 function readableServerError(payload) {
-  if (payload?.message) {
-    return payload.message;
-  }
-
-  return 'Problème de connexion avec le serveur.';
+  return payload?.message || 'Erreur réseau';
 }
 
 function readableClientError(error) {
   const message = error?.message || '';
+  if (message.includes('Permission denied') || message.includes('NotAllowedError')) return 'Micro refusé';
+  if (message.includes('NotFoundError')) return 'Aucun micro trouvé';
+  if (message.includes('Failed to fetch') || message.includes('NetworkError')) return 'Erreur réseau';
+  return message || 'Erreur réseau';
+}
 
-  if (message.includes('Permission denied') || message.includes('NotAllowedError')) {
-    return 'Micro refusé.';
-  }
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
 
-  if (message.includes('Requested device not found') || message.includes('NotFoundError')) {
-    return 'Aucun micro trouvé sur cet appareil.';
-  }
-
-  if (message.includes('OpenAI')) {
-    return `Erreur OpenAI : ${message}`;
-  }
-
-  return message || 'Problème de connexion.';
+function escapeAttribute(value) {
+  return escapeHtml(value).replaceAll('"', '&quot;');
 }
 
 function registerServiceWorker() {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'interprete-du-gite-v17';
+const CACHE_NAME = 'interprete-du-gite-v18';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

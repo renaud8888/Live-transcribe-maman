@@ -15,7 +15,16 @@ const SUPPORTED_LANGUAGES = new Set([
   'en',
   'nl',
   'de',
-  'es'
+  'es',
+  'it',
+  'pl',
+  'pt',
+  'ar',
+  'tr',
+  'uk',
+  'ja',
+  'ko',
+  'zh'
 ]);
 
 app.use(express.json({ limit: '16kb' }));
@@ -91,7 +100,7 @@ app.post('/session', async (req, res) => {
   }
 });
 
-app.post('/translate', async (req, res) => {
+app.post(['/translate', '/api/translate-text'], async (req, res) => {
   try {
     const { text, sourceLanguage = 'fr', targetLanguage } = req.body || {};
 

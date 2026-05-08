@@ -3,159 +3,147 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#151f32">
+    <meta name="theme-color" content="#fbf4e7">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Interprète du gîte">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="stylesheet" href="/styles.css">
     <title>Interprète du gîte</title>
   </head>
   <body>
     <main class="app-shell">
-      <header class="topbar">
-        <div class="brand">
+      <section id="homeView" class="view home-view is-active" aria-labelledby="homeTitle">
+        <div class="home-hero">
           <p class="eyebrow">Accueil voyageurs</p>
-          <h1>Interprète du gîte</h1>
+          <h1 id="homeTitle">Interprète du gîte</h1>
+          <p class="home-subtitle">Parlez facilement avec vos invités et montrez-leur les informations utiles.</p>
         </div>
-        <div id="statusBadge" class="status status-ready" role="status" aria-live="polite">
-          <span class="status-light" aria-hidden="true"></span>
-          <span id="statusText">Prêt</span>
-        </div>
-      </header>
 
-      <section class="translator" aria-label="Module de traduction">
-        <div class="translator-toolbar">
-          <label class="language-pill" for="guestLanguage">
-            <span>Langue de l’invité</span>
+        <section class="home-panel" aria-label="Démarrer">
+          <label class="field-label" for="guestLanguage">Langue de l’invité</label>
+          <div class="select-wrap">
             <select id="guestLanguage" name="guestLanguage">
               <option value="en">Anglais</option>
               <option value="nl">Néerlandais</option>
               <option value="de">Allemand</option>
               <option value="es">Espagnol</option>
+              <option value="it">Italien</option>
+              <option value="pl">Polonais</option>
+              <option value="pt">Portugais</option>
+              <option value="ar">Arabe</option>
+              <option value="tr">Turc</option>
+              <option value="uk">Ukrainien</option>
+              <option value="ja">Japonais</option>
+              <option value="ko">Coréen</option>
+              <option value="zh">Chinois</option>
             </select>
-          </label>
+          </div>
 
-        </div>
-
-        <div class="mode-switch" aria-label="Mode de traduction">
-          <button id="modeRealtimeButton" class="mode-button is-selected" type="button" data-mode="realtime" aria-pressed="true">
-            <span>Live</span>
-            <small>Micro continu</small>
-          </button>
-          <button id="modeDictationButton" class="mode-button" type="button" data-mode="dictation" aria-pressed="false">
-            <span>Éco</span>
-            <small>Dictée clavier</small>
-          </button>
-        </div>
-
-        <section class="direction-row" aria-label="Choisir qui parle">
-          <button id="stopButton" class="stop-button" type="button" hidden>Arrêter</button>
-
-          <div class="direction-panel">
-            <button id="hostToGuestButton" class="direction-card direction-host" type="button" data-direction="host-to-guest">
-              <span class="speaker-mark" aria-hidden="true">FR</span>
-              <span class="direction-copy">
-                <strong>Je parle</strong>
-                <small id="hostDirectionLabel">Français → Anglais</small>
-              </span>
+          <div class="home-actions">
+            <button id="openTranslateView" class="launch-card launch-card-host" type="button">
+              <span>Traduction face-à-face</span>
+              <small>Parler, écrire ou dicter entre vous et l’invité.</small>
             </button>
-
-            <button id="guestToHostButton" class="direction-card direction-guest" type="button" data-direction="guest-to-host">
-              <span class="speaker-mark" aria-hidden="true">🌍</span>
-              <span class="direction-copy">
-                <strong>L’invité parle</strong>
-                <small id="guestDirectionLabel">Anglais → Français</small>
-              </span>
+            <button id="openMessagesView" class="launch-card launch-card-guest" type="button">
+              <span>Messages utiles du gîte</span>
+              <small>Préparer les infos essentielles et les afficher en grand.</small>
             </button>
           </div>
         </section>
 
-        <section class="live-stage" aria-label="Traduction">
-          <div class="live-header">
-            <div>
-              <p class="module-label">Traduction</p>
-              <h2 id="liveTitle" class="sr-only">Traduction</h2>
-            </div>
-            <div class="live-meta">
-              <span id="listeningBadge" class="micro-pill">Micro prêt</span>
-              <span id="subtitleDirection" class="direction-pill">En attente</span>
-            </div>
-          </div>
-
-          <div id="subtitleText" class="translation-display" aria-live="polite">
-            <span>La traduction s’affichera ici.</span>
-          </div>
-
-          <div id="dictationPanel" class="dictation-panel" hidden>
-            <label id="dictationLabel" for="dictationText">Texte à traduire</label>
-            <textarea id="dictationText" rows="4" autocomplete="off" placeholder="Touchez ici, puis utilisez le micro du clavier iPhone."></textarea>
-            <button id="translateDictationButton" class="quiet-button strong" type="button">Traduire</button>
-          </div>
-
-          <div class="live-actions">
-            <button id="clearSubtitleButton" class="quiet-button" type="button">Effacer</button>
-            <button id="autoReadButton" class="switch-button" type="button" role="switch" aria-checked="false">
-              <span class="switch-track" aria-hidden="true"></span>
-              <span>Lecture auto</span>
-            </button>
-            <button id="showLiveLargeButton" class="quiet-button strong" type="button">Afficher à l’invité</button>
-          </div>
-        </section>
+        <details class="settings-panel">
+          <summary>Réglages</summary>
+          <label class="field-label" for="accessCode">Code d’accès</label>
+          <input id="accessCode" type="password" inputmode="numeric" autocomplete="off" placeholder="Code facultatif">
+        </details>
       </section>
 
-      <section class="quick-section" aria-label="Phrases rapides">
-        <div class="quick-intro">
+      <section id="translateView" class="view translate-view" aria-labelledby="translateTitle">
+        <header class="compact-bar">
+          <button class="back-button" type="button" data-go-home>Retour</button>
           <div>
-            <p class="module-label">À montrer à l’invité</p>
-            <h2>Phrases rapides</h2>
-            <p>Modifiez le français si besoin, puis affichez la traduction à l’invité.</p>
+            <p id="translateTitle">Face-à-face</p>
+            <strong id="translateLanguageLabel">Anglais</strong>
           </div>
-        </div>
+          <div id="statusBadge" class="status status-ready" role="status" aria-live="polite">
+            <span class="status-light" aria-hidden="true"></span>
+            <span id="statusText">Prêt</span>
+          </div>
+        </header>
 
-        <div id="quickPhraseButtons" class="quick-list"></div>
+        <section class="conversation-board" aria-label="Traduction face-à-face">
+          <article class="person-panel guest-panel is-flipped" aria-labelledby="guestPanelTitle">
+            <div class="person-content">
+              <div class="person-heading">
+                <div>
+                  <p id="guestPanelTitle" class="person-label">Invité</p>
+                  <strong id="guestPanelLanguage">Anglais</strong>
+                </div>
+                <span class="hint">Écrivez ou dictez ici</span>
+              </div>
+              <textarea id="guestText" class="translation-textarea" autocomplete="off" placeholder="La traduction pour l’invité apparaîtra ici."></textarea>
+              <div class="panel-actions">
+                <button id="guestSpeakButton" class="primary-action guest-action" type="button">L’invité parle</button>
+                <button id="readGuestButton" class="secondary-action" type="button">Lire</button>
+                <button id="clearGuestButton" class="secondary-action" type="button">Effacer</button>
+              </div>
+            </div>
+          </article>
 
-        <article id="quickPhraseResult" class="phrase-result" hidden>
-          <button id="closePhraseButton" class="close-result" type="button" aria-label="Fermer la phrase">×</button>
-          <div class="phrase-column">
-            <p class="phrase-label">Titre</p>
-            <input id="quickTitle" class="phrase-title-editor" type="text">
-          </div>
-          <div class="phrase-column">
-            <p class="phrase-label">En français</p>
-            <textarea id="quickFrench" class="phrase-editor" rows="3"></textarea>
-          </div>
-          <div class="phrase-column guest-language">
-            <p id="quickLanguageLabel" class="phrase-label">Anglais</p>
-            <p id="quickTranslated" class="phrase-text translated-text"></p>
-          </div>
-          <div class="phrase-actions">
-            <button id="speakQuickButton" class="quiet-button strong green" type="button">Lire</button>
-            <button id="showLargeButton" class="quiet-button strong" type="button">Afficher à l’invité</button>
-          </div>
-        </article>
+          <article class="person-panel host-panel" aria-labelledby="hostPanelTitle">
+            <div class="person-content">
+              <div class="person-heading">
+                <div>
+                  <p id="hostPanelTitle" class="person-label">Vous</p>
+                  <strong>Français</strong>
+                </div>
+                <span class="hint">Écrivez ou dictez ici</span>
+              </div>
+              <textarea id="hostText" class="translation-textarea" autocomplete="off" placeholder="Écrivez ou dictez en français."></textarea>
+              <div class="panel-actions">
+                <button id="hostSpeakButton" class="primary-action host-action" type="button">Je parle</button>
+                <button id="readHostButton" class="secondary-action" type="button">Lire</button>
+                <button id="clearHostButton" class="secondary-action" type="button">Effacer</button>
+              </div>
+            </div>
+          </article>
+        </section>
       </section>
 
-      <p id="errorMessage" class="error-message" role="alert" hidden></p>
+      <section id="messagesView" class="view messages-view" aria-labelledby="messagesTitle">
+        <header class="compact-bar">
+          <button class="back-button" type="button" data-go-home>Retour</button>
+          <div>
+            <p id="messagesTitle">Messages utiles du gîte</p>
+            <strong id="messagesLanguageLabel">Anglais</strong>
+          </div>
+          <button id="saveMessagesButton" class="save-button" type="button">Enregistrer</button>
+        </header>
+
+        <div id="messageCards" class="message-list" aria-live="polite"></div>
+      </section>
     </main>
 
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <dialog id="guestDisplayDialog" class="guest-dialog" aria-labelledby="guestDisplayLanguage">
       <div class="guest-display">
-        <div class="guest-display-header">
-          <p id="guestDisplayLanguage">Anglais</p>
-          <button id="closeGuestDisplayButton" type="button">Fermer</button>
-        </div>
+        <header class="guest-display-header">
+          <div>
+            <p id="guestDisplayLanguage">Anglais</p>
+            <strong id="guestDisplayTitle">Message</strong>
+          </div>
+          <button id="closeGuestDisplayButton" class="secondary-action" type="button">Fermer</button>
+        </header>
         <p id="guestDisplayText" class="guest-display-text"></p>
-        <div class="guest-display-actions">
-          <button id="speakGuestDisplayButton" class="quiet-button strong green" type="button">Lire</button>
-        </div>
+        <p id="guestDisplayFrench" class="guest-display-french"></p>
+        <button id="speakGuestDisplayButton" class="primary-action guest-action" type="button">Lire</button>
       </div>
     </dialog>
 
-    <audio id="remoteAudio" autoplay playsinline></audio>
+    <audio id="remoteAudio" playsinline></audio>
     <script src="/app.js" defer></script>
   </body>
 </html>
