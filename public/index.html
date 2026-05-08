@@ -61,12 +61,13 @@
       </section>
 
       <section id="translateView" class="view translate-view" aria-labelledby="translateTitle">
-        <header class="compact-bar">
+        <header class="compact-bar translate-bar">
           <button class="back-button" type="button" data-go-home>Retour</button>
           <div>
             <p id="translateTitle">Face-à-face</p>
             <strong id="translateLanguageLabel">Anglais</strong>
           </div>
+          <button id="stopLiveButton" class="stop-button" type="button" disabled>Arrêter</button>
           <div id="statusBadge" class="status status-ready" role="status" aria-live="polite">
             <span class="status-light" aria-hidden="true"></span>
             <span id="statusText">Prêt</span>
@@ -81,13 +82,13 @@
                   <p id="guestPanelTitle" class="person-label">Invité</p>
                   <strong id="guestPanelLanguage">Anglais</strong>
                 </div>
-                <span class="hint">Écrivez ou dictez ici</span>
+                <span id="guestPanelHint" class="hint">Écrivez ou dictez ici</span>
               </div>
               <textarea id="guestText" class="translation-textarea" autocomplete="off" placeholder="La traduction pour l’invité apparaîtra ici."></textarea>
               <div class="panel-actions">
                 <button id="guestSpeakButton" class="primary-action guest-action" type="button">L’invité parle</button>
-                <button id="readGuestButton" class="secondary-action" type="button">Lire</button>
-                <button id="clearGuestButton" class="secondary-action" type="button">Effacer</button>
+                <button id="readGuestButton" class="secondary-action read-action" type="button">Lire</button>
+                <button id="clearGuestButton" class="secondary-action clear-action" type="button">Effacer</button>
               </div>
             </div>
           </article>
@@ -104,8 +105,8 @@
               <textarea id="hostText" class="translation-textarea" autocomplete="off" placeholder="Écrivez ou dictez en français."></textarea>
               <div class="panel-actions">
                 <button id="hostSpeakButton" class="primary-action host-action" type="button">Je parle</button>
-                <button id="readHostButton" class="secondary-action" type="button">Lire</button>
-                <button id="clearHostButton" class="secondary-action" type="button">Effacer</button>
+                <button id="readHostButton" class="secondary-action read-action" type="button">Lire</button>
+                <button id="clearHostButton" class="secondary-action clear-action" type="button">Effacer</button>
               </div>
             </div>
           </article>
@@ -113,7 +114,7 @@
       </section>
 
       <section id="messagesView" class="view messages-view" aria-labelledby="messagesTitle">
-        <header class="compact-bar">
+        <header class="compact-bar messages-bar">
           <button class="back-button" type="button" data-go-home>Retour</button>
           <div>
             <p id="messagesTitle">Messages utiles du gîte</p>

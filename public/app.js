@@ -32,6 +32,139 @@ const SPEECH_LANGS = {
   zh: 'zh-CN'
 };
 
+const GUEST_PANEL_LABELS = {
+  en: {
+    guest: 'Guest',
+    hint: 'Write or dictate here',
+    placeholder: 'The translation for the guest will appear here.',
+    speak: 'Guest speaks',
+    read: 'Read',
+    clear: 'Clear',
+    connecting: 'Connecting to the microphone...',
+    listeningHost: 'I am listening. The translation will appear here.'
+  },
+  nl: {
+    guest: 'Gast',
+    hint: 'Schrijf of dicteer hier',
+    placeholder: 'De vertaling voor de gast verschijnt hier.',
+    speak: 'De gast spreekt',
+    read: 'Voorlezen',
+    clear: 'Wissen',
+    connecting: 'Verbinding met de microfoon...',
+    listeningHost: 'Ik luister. De vertaling verschijnt hier.'
+  },
+  de: {
+    guest: 'Gast',
+    hint: 'Hier schreiben oder diktieren',
+    placeholder: 'Die Übersetzung für den Gast erscheint hier.',
+    speak: 'Der Gast spricht',
+    read: 'Vorlesen',
+    clear: 'Löschen',
+    connecting: 'Verbindung mit dem Mikrofon...',
+    listeningHost: 'Ich höre zu. Die Übersetzung erscheint hier.'
+  },
+  es: {
+    guest: 'Invitado',
+    hint: 'Escriba o dicte aquí',
+    placeholder: 'La traducción para el invitado aparecerá aquí.',
+    speak: 'Habla el invitado',
+    read: 'Leer',
+    clear: 'Borrar',
+    connecting: 'Conectando con el micrófono...',
+    listeningHost: 'Estoy escuchando. La traducción aparecerá aquí.'
+  },
+  it: {
+    guest: 'Ospite',
+    hint: 'Scrivi o detta qui',
+    placeholder: 'La traduzione per l’ospite apparirà qui.',
+    speak: 'Parla l’ospite',
+    read: 'Leggi',
+    clear: 'Cancella',
+    connecting: 'Connessione al microfono...',
+    listeningHost: 'Sto ascoltando. La traduzione apparirà qui.'
+  },
+  pl: {
+    guest: 'Gość',
+    hint: 'Napisz lub podyktuj tutaj',
+    placeholder: 'Tłumaczenie dla gościa pojawi się tutaj.',
+    speak: 'Gość mówi',
+    read: 'Odczytaj',
+    clear: 'Wyczyść',
+    connecting: 'Łączenie z mikrofonem...',
+    listeningHost: 'Słucham. Tłumaczenie pojawi się tutaj.'
+  },
+  pt: {
+    guest: 'Convidado',
+    hint: 'Escreva ou dite aqui',
+    placeholder: 'A tradução para o convidado aparecerá aqui.',
+    speak: 'O convidado fala',
+    read: 'Ler',
+    clear: 'Apagar',
+    connecting: 'A ligar ao microfone...',
+    listeningHost: 'Estou a ouvir. A tradução aparecerá aqui.'
+  },
+  ar: {
+    guest: 'الضيف',
+    hint: 'اكتب أو أملي هنا',
+    placeholder: 'ستظهر الترجمة للضيف هنا.',
+    speak: 'الضيف يتحدث',
+    read: 'استماع',
+    clear: 'مسح',
+    connecting: 'جارٍ الاتصال بالميكروفون...',
+    listeningHost: 'أنا أستمع. ستظهر الترجمة هنا.'
+  },
+  tr: {
+    guest: 'Misafir',
+    hint: 'Buraya yazın veya dikte edin',
+    placeholder: 'Misafir için çeviri burada görünecek.',
+    speak: 'Misafir konuşuyor',
+    read: 'Oku',
+    clear: 'Temizle',
+    connecting: 'Mikrofona bağlanıyor...',
+    listeningHost: 'Dinliyorum. Çeviri burada görünecek.'
+  },
+  uk: {
+    guest: 'Гість',
+    hint: 'Пишіть або диктуйте тут',
+    placeholder: 'Переклад для гостя з’явиться тут.',
+    speak: 'Гість говорить',
+    read: 'Прочитати',
+    clear: 'Очистити',
+    connecting: 'Підключення до мікрофона...',
+    listeningHost: 'Я слухаю. Переклад з’явиться тут.'
+  },
+  ja: {
+    guest: 'ゲスト',
+    hint: 'ここに入力または音声入力',
+    placeholder: 'ゲスト向けの翻訳がここに表示されます。',
+    speak: 'ゲストが話す',
+    read: '読み上げ',
+    clear: '消去',
+    connecting: 'マイクに接続しています...',
+    listeningHost: '聞いています。翻訳がここに表示されます。'
+  },
+  ko: {
+    guest: '손님',
+    hint: '여기에 입력하거나 받아쓰기',
+    placeholder: '손님을 위한 번역이 여기에 표시됩니다.',
+    speak: '손님이 말하기',
+    read: '읽기',
+    clear: '지우기',
+    connecting: '마이크에 연결 중...',
+    listeningHost: '듣고 있습니다. 번역이 여기에 표시됩니다.'
+  },
+  zh: {
+    guest: '客人',
+    hint: '在此输入或听写',
+    placeholder: '给客人的翻译会显示在这里。',
+    speak: '客人说话',
+    read: '朗读',
+    clear: '清除',
+    connecting: '正在连接麦克风...',
+    listeningHost: '我正在听。翻译会显示在这里。'
+  }
+};
+
 const DEFAULT_MESSAGES = [
   {
     id: 'wifi',
@@ -61,6 +194,8 @@ const state = {
   localStream: null,
   dataChannel: null,
   activeDirection: null,
+  pendingDirection: null,
+  sessionToken: 0,
   translatingFrom: null,
   debounceTimers: {},
   messages: [],
@@ -77,12 +212,15 @@ const openMessagesView = document.querySelector('#openMessagesView');
 const translateLanguageLabel = document.querySelector('#translateLanguageLabel');
 const messagesLanguageLabel = document.querySelector('#messagesLanguageLabel');
 const guestPanelLanguage = document.querySelector('#guestPanelLanguage');
+const guestPanelTitle = document.querySelector('#guestPanelTitle');
+const guestPanelHint = document.querySelector('#guestPanelHint');
 const statusBadge = document.querySelector('#statusBadge');
 const statusText = document.querySelector('#statusText');
 const hostText = document.querySelector('#hostText');
 const guestText = document.querySelector('#guestText');
 const hostSpeakButton = document.querySelector('#hostSpeakButton');
 const guestSpeakButton = document.querySelector('#guestSpeakButton');
+const stopLiveButton = document.querySelector('#stopLiveButton');
 const readHostButton = document.querySelector('#readHostButton');
 const readGuestButton = document.querySelector('#readGuestButton');
 const clearHostButton = document.querySelector('#clearHostButton');
@@ -112,12 +250,19 @@ guestLanguageSelect.addEventListener('change', handleLanguageChange);
 accessCode.addEventListener('input', saveAccessCode);
 hostSpeakButton.addEventListener('click', () => startTranslation('host-to-guest'));
 guestSpeakButton.addEventListener('click', () => startTranslation('guest-to-host'));
+stopLiveButton.addEventListener('click', () => stopTranslation('Arrêté'));
 readHostButton.addEventListener('click', () => speakText(hostText.value, 'fr'));
 readGuestButton.addEventListener('click', () => speakText(guestText.value, guestLanguageSelect.value));
 clearHostButton.addEventListener('click', () => clearPanel('host'));
 clearGuestButton.addEventListener('click', () => clearPanel('guest'));
-hostText.addEventListener('input', () => scheduleTextareaTranslation('host'));
-guestText.addEventListener('input', () => scheduleTextareaTranslation('guest'));
+hostText.addEventListener('input', () => {
+  updateTextareaDensity(hostText);
+  scheduleTextareaTranslation('host');
+});
+guestText.addEventListener('input', () => {
+  updateTextareaDensity(guestText);
+  scheduleTextareaTranslation('guest');
+});
 hostText.addEventListener('blur', () => flushTextareaTranslation('host'));
 guestText.addEventListener('blur', () => flushTextareaTranslation('guest'));
 saveMessagesButton.addEventListener('click', () => {
@@ -148,13 +293,18 @@ function showView(viewName) {
 async function startTranslation(direction) {
   clearDebounces();
   await stopTranslation(null);
+  clearBothTextareas();
+  const sessionToken = ++state.sessionToken;
+  state.pendingDirection = direction;
   updateUIState('connecting', { direction });
 
   const guestLanguage = guestLanguageSelect.value;
+  const guestCopy = getGuestPanelCopy();
   const sourceLanguage = direction === 'host-to-guest' ? 'fr' : guestLanguage;
   const targetLanguage = direction === 'host-to-guest' ? guestLanguage : 'fr';
   const outputArea = direction === 'host-to-guest' ? guestText : hostText;
-  outputArea.value = 'Connexion au micro...';
+  outputArea.value = direction === 'host-to-guest' ? guestCopy.connecting : 'Connexion au micro...';
+  scrollTextareaToEnd(outputArea);
 
   try {
     const localStream = await navigator.mediaDevices.getUserMedia({
@@ -164,6 +314,12 @@ async function startTranslation(direction) {
         autoGainControl: true
       }
     });
+    state.localStream = localStream;
+
+    if (sessionToken !== state.sessionToken) {
+      localStream.getTracks().forEach((track) => track.stop());
+      return;
+    }
 
     const sessionResponse = await fetch('/session', {
       method: 'POST',
@@ -173,12 +329,18 @@ async function startTranslation(direction) {
     const sessionPayload = await sessionResponse.json().catch(() => ({}));
 
     if (!sessionResponse.ok) throw new Error(readableServerError(sessionPayload));
+    if (sessionToken !== state.sessionToken) {
+      localStream.getTracks().forEach((track) => track.stop());
+      return;
+    }
 
     const clientSecret = sessionPayload.client_secret;
     if (!clientSecret) throw new Error('OpenAI n’a pas renvoyé de client secret temporaire.');
 
     const peerConnection = new RTCPeerConnection();
     const dataChannel = peerConnection.createDataChannel('oai-events');
+    state.peerConnection = peerConnection;
+    state.dataChannel = dataChannel;
 
     peerConnection.ontrack = (event) => {
       remoteAudio.srcObject = event.streams[0];
@@ -216,17 +378,25 @@ async function startTranslation(direction) {
     const answerSdp = await answerResponse.text();
     await peerConnection.setRemoteDescription({ type: 'answer', sdp: answerSdp });
 
-    state.peerConnection = peerConnection;
-    state.localStream = localStream;
-    state.dataChannel = dataChannel;
+    if (sessionToken !== state.sessionToken) {
+      dataChannel.close();
+      peerConnection.close();
+      localStream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
     state.activeDirection = direction;
+    state.pendingDirection = null;
     outputArea.value = direction === 'host-to-guest'
-      ? 'Je vous écoute. La traduction apparaîtra ici.'
+      ? guestCopy.listeningHost
       : 'J’écoute l’invité. La traduction apparaîtra ici.';
+    updateTextareaDensity(outputArea);
+    scrollTextareaToEnd(outputArea);
     updateUIState(direction === 'host-to-guest' ? 'listeningHost' : 'listeningGuest', { direction });
     showToast('En écoute');
   } catch (error) {
     await stopTranslation(null);
+    state.pendingDirection = null;
     const message = readableClientError(error);
     updateUIState('error');
     showToast(message.includes('Micro') ? 'Micro refusé' : message);
@@ -235,6 +405,7 @@ async function startTranslation(direction) {
 }
 
 async function stopTranslation(label) {
+  state.sessionToken += 1;
   if (state.dataChannel) state.dataChannel.close();
   if (state.peerConnection) {
     state.peerConnection.getSenders().forEach((sender) => sender.track?.stop());
@@ -247,6 +418,7 @@ async function stopTranslation(label) {
   state.localStream = null;
   state.dataChannel = null;
   state.activeDirection = null;
+  state.pendingDirection = null;
 
   if (label) {
     updateUIState('stopped');
@@ -274,6 +446,8 @@ function handleRealtimeEvent(event) {
     const outputArea = state.activeDirection === 'guest-to-host' ? hostText : guestText;
     const isDelta = payload.type?.includes('delta');
     outputArea.value = isDelta ? `${outputArea.value || ''}${text}` : text;
+    updateTextareaDensity(outputArea);
+    scrollTextareaToEnd(outputArea);
     updateUIState('translatingText');
     window.setTimeout(() => {
       if (state.activeDirection) {
@@ -317,6 +491,8 @@ async function translateFromTextarea(source) {
   try {
     const translation = await translateText(text, sourceLanguage, targetLanguage);
     targetArea.value = translation;
+    updateTextareaDensity(targetArea);
+    scrollTextareaToEnd(targetArea);
   } catch (error) {
     showToast(readableClientError(error).includes('réseau') ? 'Erreur réseau' : readableClientError(error));
     updateUIState('error');
@@ -340,7 +516,8 @@ async function translateText(text, sourceLanguage, targetLanguage) {
 
 function updateUIState(nextState, options = {}) {
   state.uiState = nextState;
-  const direction = options.direction || state.activeDirection;
+  const direction = options.direction || state.activeDirection || state.pendingDirection;
+  const hasLiveWork = Boolean(state.activeDirection || state.pendingDirection);
   const labels = {
     ready: 'Prêt',
     connecting: 'Connexion',
@@ -357,6 +534,8 @@ function updateUIState(nextState, options = {}) {
   guestSpeakButton.classList.toggle('is-active', nextState === 'listeningGuest' || direction === 'guest-to-host');
   hostSpeakButton.disabled = nextState === 'connecting';
   guestSpeakButton.disabled = nextState === 'connecting';
+  stopLiveButton.disabled = !hasLiveWork;
+  stopLiveButton.classList.toggle('is-available', hasLiveWork);
 }
 
 function renderMessages() {
@@ -372,8 +551,8 @@ function renderMessages() {
       <textarea class="message-french" rows="3" aria-label="Texte français">${escapeHtml(message.fr)}</textarea>
       <div class="message-translation" lang="${language}">${escapeHtml(message.translations?.[language] || '')}</div>
       <div class="message-actions">
-        <button class="secondary-action translate-message" type="button">Traduire</button>
-        <button class="secondary-action read-message" type="button">Lire</button>
+        <button class="secondary-action translate-action translate-message" type="button">Traduire</button>
+        <button class="secondary-action read-action read-message" type="button">Lire</button>
         <button class="primary-action guest-action show-message" type="button">Afficher à l’invité</button>
       </div>
     `;
@@ -456,7 +635,16 @@ function showGuestDisplay({ title, text, french, language }) {
 function clearPanel(panel) {
   if (panel === 'host') hostText.value = '';
   if (panel === 'guest') guestText.value = '';
+  updateTextareaDensity(hostText);
+  updateTextareaDensity(guestText);
   showToast('Traduction effacée');
+}
+
+function clearBothTextareas() {
+  hostText.value = '';
+  guestText.value = '';
+  updateTextareaDensity(hostText);
+  updateTextareaDensity(guestText);
 }
 
 function speakText(text, language) {
@@ -499,9 +687,21 @@ function restorePreferences() {
 
 function updateLanguageLabels() {
   const language = LANGUAGE_NAMES[guestLanguageSelect.value] || 'Anglais';
+  const guestCopy = getGuestPanelCopy();
   translateLanguageLabel.textContent = language;
   messagesLanguageLabel.textContent = language;
   guestPanelLanguage.textContent = language;
+  guestPanelTitle.textContent = guestCopy.guest;
+  guestPanelHint.textContent = guestCopy.hint;
+  guestText.placeholder = guestCopy.placeholder;
+  guestSpeakButton.textContent = guestCopy.speak;
+  readGuestButton.textContent = guestCopy.read;
+  clearGuestButton.textContent = guestCopy.clear;
+  guestText.dir = guestLanguageSelect.value === 'ar' ? 'rtl' : 'auto';
+}
+
+function getGuestPanelCopy() {
+  return GUEST_PANEL_LABELS[guestLanguageSelect.value] || GUEST_PANEL_LABELS.en;
 }
 
 function loadMessages() {
@@ -531,6 +731,18 @@ function saveMessages() {
 function clearDebounces() {
   Object.values(state.debounceTimers).forEach((timer) => window.clearTimeout(timer));
   state.debounceTimers = {};
+}
+
+function updateTextareaDensity(textarea) {
+  const length = textarea.value.trim().length;
+  textarea.classList.toggle('is-long', length > 180);
+  textarea.classList.toggle('is-very-long', length > 420);
+}
+
+function scrollTextareaToEnd(textarea) {
+  window.requestAnimationFrame(() => {
+    textarea.scrollTop = textarea.scrollHeight;
+  });
 }
 
 function showToast(message) {
